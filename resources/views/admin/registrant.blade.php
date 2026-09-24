@@ -6,8 +6,8 @@
 <section class="panel"><h2>Profil</h2>
 @if($profile)
 <p>Kota: {{ $profile->city }} · Verifikasi profil: {{ $profile->verification }}</p>
-@if($table === 'workers')<p>{{ $profile->bio }}</p><p>{{ $profile->category }} · Pengalaman {{ $profile->experience_years }} tahun</p>
-@else<p>Nomor legalitas: {{ $profile->legal_number }}</p>@endif
+@if($table === 'workers')<p>{{ $profile->bio }}</p><p>{{ $profile->category }} · Pengalaman {{ $profile->experience_years }} tahun</p>@include('admin.worker-pricing',['worker'=>$profile])
+@else<p>Nomor legalitas: {{ $profile->legal_number }}</p><h3>Tarif & fee pekerja naungan</h3>@forelse($agencyWorkers as $worker)<h4>{{ $worker->name }}</h4>@include('admin.worker-pricing',['worker'=>$worker])@empty<p>Belum ada pekerja naungan.</p>@endforelse @endif
 @else<p>Pendaftar belum melengkapi profil.</p>@endif
 </section>
 <section class="panel"><h2>Dokumen privat</h2><p>Hanya admin yang dapat mengakses dokumen. Setiap akses berkas dicatat dalam audit trail.</p>

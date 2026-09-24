@@ -16,6 +16,7 @@ class PaymentController extends Controller
     {
         $booking = DB::table('bookings')->find($id);
         abort_unless($booking, 404);
+        abort_if($booking->is_demo, 422, 'Booking demo tidak dapat digunakan untuk transaksi nyata.');
         abort_unless($request->user()->role === 'family' && $booking->family_id === $request->user()->id, 403);
 
         return $booking;

@@ -40,7 +40,57 @@ class AdminController extends Controller
         foreach (['workers', 'agencies', 'bookings', 'safety_reports'] as $t) {
             $stats[$t] = DB::table($t)->count();
         }
-        $rows = DB::table($section === 'overview' ? 'bookings' : $section)->latest()->paginate(20)->withQueryString();
+        $query = DB::table($section === 'overview' ? 'bookings' : $section);
+        $workerFilters = [];
+        $filterAgencies = collect();
+        if ($section === 'workers') {
+            $workerFilters = $r->validate([
+                'q' => 'nullable|string|max:100',
+                'affiliation' => ['nullable', Rule::in(['agency', 'independent'])],
+                'agency_id' => 'nullable|integer|exists:agencies,id',
+                'category' => ['nullable', Rule::in(['art', 'babysitter'])],
+                'verification' => ['nullable', Rule::in(['pending', 'verified', 'rejected'])],
+                'available' => ['nullable', Rule::in(['0', '1'])],
+            ]);
+            $filterAgencies = DB::table('agencies')->orderBy('name')->get(['id', 'name']);
+            $query->leftJoin('agencies', 'agencies.id', '=', 'workers.agency_id')->select('workers.*', 'agencies.name as agency_name');
+            if ($r->filled('q')) {
+                $query->where(function ($q) use ($workerFilters) {
+                    $q->where('workers.name', 'like', '%'.$workerFilters['q'].'%')->orWhere('workers.city', 'like', '%'.$workerFilters['q'].'%');
+                });
+            }
+            if (($workerFilters['affiliation'] ?? '') === 'independent') {
+                $query->whereNull('workers.agency_id');
+            } elseif (($workerFilters['affiliation'] ?? '') === 'agency') {
+                $query->whereNotNull('workers.agency_id');
+            }
+            foreach (['agency_id', 'category', 'verification', 'available'] as $field) {
+                if ($r->filled($field)) {
+                    $query->where('workers.'.$field, $workerFilters[$field]);
+                }
+            }
+            $query->orderByDesc('workers.id');
+        }
+        if (in_array($section, ['overview', 'bookings'])) {
+            $query->join('workers', 'workers.id', '=', 'bookings.worker_id')
+                ->join('users', 'users.id', '=', 'bookings.family_id')
+                ->leftJoin('agencies', 'agencies.id', '=', 'bookings.agency_id')
+                ->select('bookings.*', 'workers.name as worker_name', 'users.name as family_name', 'agencies.name as agency_name')
+                ->orderByDesc('bookings.id');
+        } elseif ($section !== 'workers') {
+            $query->latest();
+        }
+        $rows = $query->paginate(20)->withQueryString();
+        $agencyWorkers = $section === 'agencies' ? DB::table('workers')->whereIn('agency_id', $rows->pluck('id'))->get()->groupBy('agency_id') : collect();
+        $revenue = [];
+        if (in_array($section, ['overview', 'bookings'])) {
+            foreach ([0 => 'Transaksi aktual', 1 => 'Simulasi booking demo'] as $demo => $label) {
+                $paid = DB::table('bookings')->where('is_demo', $demo)->where('payment_status', 'paid')->whereIn('status', ['accepted', 'in_progress', 'completed']);
+                $revenue[] = ['label' => $label, 'count' => (clone $paid)->count(), 'total' => (clone $paid)->sum('total'),
+                    'worker' => (clone $paid)->sum('worker_pay'), 'agency' => (clone $paid)->sum('agency_fee'), 'platform' => (clone $paid)->sum('platform_fee'),
+                    'pending' => DB::table('bookings')->where('is_demo', $demo)->where('payment_status', 'unpaid')->whereIn('status', ['requested', 'accepted'])->sum('platform_fee')];
+            }
+        }
 
         $registrations = collect();
         if (in_array($section, ['workers', 'agencies'])) {
@@ -53,7 +103,7 @@ class AdminController extends Controller
             ? DB::table('payments')->whereIn('booking_id', $rows->pluck('id'))->orderByDesc('id')->get(['booking_id', 'order_id', 'status', 'payment_type', 'amount', 'created_at'])->groupBy('booking_id')
             : collect();
 
-        return view('admin.dashboard', compact('section', 'stats', 'rows', 'registrations', 'payments'));
+        return view('admin.dashboard', compact('section', 'stats', 'rows', 'registrations', 'payments', 'agencyWorkers', 'revenue', 'workerFilters', 'filterAgencies'));
     }
 
     public function verify(Request $r, string $table, int $id)
@@ -101,7 +151,9 @@ class AdminController extends Controller
         $profile = $table ? DB::table($table)->where('user_id', $id)->first() : null;
         $documents = DB::table('verification_requests')->where('user_id', $id)->latest()->get();
 
-        return view('admin.registrant', compact('user', 'profile', 'documents', 'table'));
+        $agencyWorkers = $table === 'agencies' && $profile ? DB::table('workers')->where('agency_id', $profile->id)->get() : collect();
+
+        return view('admin.registrant', compact('user', 'profile', 'documents', 'table', 'agencyWorkers'));
     }
 
     public function payment(Request $r, int $id)

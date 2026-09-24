@@ -27,7 +27,7 @@ class Platform
         $data['certifications'] = json_decode($worker->certifications ?? '[]', true);
         $data['agency_name'] = $worker->agency_id ? DB::table('agencies')->where('id', $worker->agency_id)->value('name') : null;
         $data['rating'] = round((float) DB::table('reviews')->where('target_id', $worker->user_id)->avg('rating'), 1);
-        $data['completed_jobs'] = DB::table('bookings')->where('worker_id', $worker->id)->where('status', 'completed')->count();
+        $data['completed_jobs'] = DB::table('bookings')->where('worker_id', $worker->id)->where('is_demo', false)->where('status', 'completed')->count();
 
         return $data;
     }

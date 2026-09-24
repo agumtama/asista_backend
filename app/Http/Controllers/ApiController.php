@@ -159,7 +159,7 @@ class ApiController extends Controller
     {
         $u = $r->user();
 
-        return DB::table('bookings')->where(function ($q) use ($u) {
+        return DB::table('bookings')->where('is_demo', false)->where(function ($q) use ($u) {
             $q->where('family_id', $u->id)->orWhereIn('worker_id', DB::table('workers')->select('id')->where('user_id', $u->id))
                 ->orWhereIn('agency_id', DB::table('agencies')->select('id')->where('user_id', $u->id));
         })->latest()->paginate(30);
@@ -197,6 +197,7 @@ class ApiController extends Controller
     {
         $b = DB::table('bookings')->find($id);
         abort_unless($b, 404);
+        abort_if($b->is_demo, 404);
         abort_unless(Platform::participant($b, $r->user()), 403);
 
         return $b;
