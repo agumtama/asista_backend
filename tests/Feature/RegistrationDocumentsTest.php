@@ -57,6 +57,13 @@ class RegistrationDocumentsTest extends TestCase
         $admin = User::factory()->create();
         $admin->role = 'admin';
         $admin->save();
+        $this->actingAs($admin)->get('/admin?section=verification_requests')->assertOk()
+            ->assertViewIs('admin.verification')
+            ->assertViewHas('users', fn ($users) => $users->total() === 1)
+            ->assertViewHas('documents', fn ($groups) => $groups->get($user->id)->count() === 2)
+            ->assertSee('data-preview=', false)->assertSee('Foto diri')->assertSee('KTP');
+        $this->get('/admin?section=verification_requests&q=tidak-ditemukan')->assertOk()
+            ->assertViewHas('users', fn ($users) => $users->total() === 0);
         $this->actingAs($admin)->get('/admin?section=workers')->assertOk()->assertSee('worker@example.test');
         $this->get('/admin/registrants/'.$user->id)->assertOk()->assertSee('KTP')->assertSee('Foto diri');
         $this->get('/admin/document/'.$photo->id)->assertOk()->assertHeader('Content-Type', 'image/jpeg')->assertHeader('X-Content-Type-Options', 'nosniff');

@@ -36,6 +36,21 @@ class AdminController extends Controller
     {
         $section = $r->query('section', 'overview');
         abort_unless(in_array($section, ['overview', 'workers', 'agencies', 'users', 'bookings', 'verification_requests', 'safety_reports', 'audit_logs']), 404);
+        if ($section === 'verification_requests') {
+            $filters = $r->validate(['q' => 'nullable|string|max:100']);
+            $users = DB::table('users')->whereExists(function ($query) {
+                $query->selectRaw('1')->from('verification_requests')->whereColumn('verification_requests.user_id', 'users.id');
+            });
+            if (! empty($filters['q'])) {
+                $users->where(function ($query) use ($filters) {
+                    $query->where('name', 'like', '%'.$filters['q'].'%')->orWhere('email', 'like', '%'.$filters['q'].'%');
+                });
+            }
+            $users = $users->orderByDesc('id')->paginate(15)->withQueryString();
+            $documents = DB::table('verification_requests')->whereIn('user_id', $users->pluck('id'))->orderByDesc('id')->get()->groupBy('user_id');
+
+            return view('admin.verification', compact('section', 'users', 'documents', 'filters'));
+        }
         $stats = [];
         foreach (['workers', 'agencies', 'bookings', 'safety_reports'] as $t) {
             $stats[$t] = DB::table($t)->count();
