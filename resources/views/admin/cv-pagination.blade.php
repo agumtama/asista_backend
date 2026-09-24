@@ -1,0 +1,1 @@
+@if($page->hasPages())<div class="pagination">@if($page->previousPageUrl())<a href="{{ $page->previousPageUrl() }}#{{ $anchor }}">← Sebelumnya</a>@endif<span>{{ $page->currentPage() }} / {{ $page->lastPage() }}</span>@if($page->nextPageUrl())<a href="{{ $page->nextPageUrl() }}#{{ $anchor }}">Berikutnya →</a>@endif</div>@endif

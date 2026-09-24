@@ -236,6 +236,21 @@ class AdminController extends Controller
         };
         $profile = $table ? DB::table($table)->where('user_id', $id)->first() : null;
         $documents = DB::table('verification_requests')->where('user_id', $id)->latest()->get();
+        if ($user->role === 'worker') {
+            $registration = json_decode($user->registration_data ?? '{}', true) ?? [];
+            $skills = $profile ? json_decode($profile->skills, true) ?? [] : ($registration['skills'] ?? []);
+            $certifications = $profile ? json_decode($profile->certifications ?? '[]', true) ?? [] : [];
+            $photo = $documents->firstWhere('document_type', 'photo');
+            $agency = $profile?->agency_id ? DB::table('agencies')->find($profile->agency_id) : null;
+            $reviewsQuery = DB::table('reviews')->join('bookings', 'bookings.id', '=', 'reviews.booking_id')->where('reviews.target_id', $id)->where('bookings.is_demo', false);
+            $rating = (clone $reviewsQuery)->avg('rating');
+            $reviewCount = (clone $reviewsQuery)->count();
+            $reviews = $reviewsQuery->select('reviews.*')->orderByDesc('reviews.id')->paginate(10, ['*'], 'reviews_page')->withQueryString();
+            $history = DB::table('bookings')->where('worker_id', $profile?->id ?? 0)->where('is_demo', false)->where('status', 'completed')->orderByDesc('ends_at')->paginate(10, ['*'], 'history_page')->withQueryString();
+            $schedule = DB::table('bookings')->where('worker_id', $profile?->id ?? 0)->where('is_demo', false)->whereIn('status', ['accepted', 'in_progress'])->where('ends_at', '>=', now())->orderBy('starts_at')->paginate(10, ['*'], 'schedule_page')->withQueryString();
+
+            return view('admin.worker-cv', compact('user', 'profile', 'documents', 'registration', 'skills', 'certifications', 'photo', 'agency', 'rating', 'reviewCount', 'reviews', 'history', 'schedule'));
+        }
 
         $agencyWorkers = $table === 'agencies' && $profile ? DB::table('workers')->where('agency_id', $profile->id)->get() : collect();
 

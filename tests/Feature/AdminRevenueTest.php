@@ -12,6 +12,24 @@ class AdminRevenueTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_worker_cv_excludes_demo_history_and_is_admin_only(): void
+    {
+        $this->seed();
+        $this->seed(DemoBookingSeeder::class);
+        $booking = DB::table('bookings')->where('total', 400000)->first();
+        $worker = DB::table('workers')->find($booking->worker_id);
+        $url = '/admin/registrants/'.$worker->user_id;
+        $this->get($url)->assertRedirect();
+        $this->actingAs(User::where('role', 'admin')->first())->get($url)
+            ->assertOk()->assertViewIs('admin.worker-cv')
+            ->assertSee('Dokumen privat')->assertSee('180.000')
+            ->assertViewHas('history', fn ($rows) => $rows->total() === 0);
+        DB::table('bookings')->where('id', $booking->id)->update(['is_demo' => false]);
+        $this->get($url)->assertOk()
+            ->assertViewHas('history', fn ($rows) => $rows->total() === 1 && $rows->first()->id === $booking->id);
+        $this->actingAs(User::where('role', 'family')->first())->get($url)->assertForbidden();
+    }
+
     public function test_admin_sees_rates_booking_snapshots_and_separate_demo_revenue(): void
     {
         $this->seed();
