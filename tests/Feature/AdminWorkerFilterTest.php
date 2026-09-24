@@ -24,6 +24,13 @@ class AdminWorkerFilterTest extends TestCase
         $this->get('/admin?section=workers&available=0')->assertOk()->assertViewHas('rows', fn ($rows) => $rows->total() === 1 && $rows->first()->name === 'Rina Wulandari');
         $this->get('/admin?section=workers&affiliation=independent&agency_id='.$agency)->assertOk()->assertViewHas('rows', fn ($rows) => $rows->total() === 0);
         $this->getJson('/admin?section=workers&affiliation=invalid')->assertUnprocessable();
+        $this->get('/admin?'.http_build_query(['section' => 'workers', 'rate_units' => ['hourly', 'daily'], 'arrangements' => ['live_out'], 'sort' => 'name']))
+            ->assertOk()->assertViewHas('rows', fn ($rows) => $rows->total() === 3 && $rows->first()->name === 'Dewi Lestari');
+        $this->get('/admin?section=workers&city=Depok&rate_units[]=monthly&arrangements[]=live_in')
+            ->assertOk()->assertViewHas('rows', fn ($rows) => $rows->total() === 1 && $rows->first()->name === 'Nur Aisyah');
+        $this->get('/admin?section=workers&q=MPASI')->assertOk()->assertViewHas('rows', fn ($rows) => $rows->total() === 1 && $rows->first()->name === 'Siti Aminah');
+        $this->getJson('/admin?section=workers&sort=invalid')->assertUnprocessable();
+        $this->getJson('/admin?section=workers&rate_units[]=invalid')->assertUnprocessable();
         $this->get('/admin?section=workers&q=Siti')->assertOk()->assertViewHas('rows', fn ($rows) => str_contains($rows->url(2), 'q=Siti') && str_contains($rows->url(2), 'section=workers'));
     }
 }

@@ -31,10 +31,36 @@ class ApiController extends Controller
         }
         $r->validate($rules);
         $paths = [];
+        if ($r->has('registration_data') && is_string($r->input('registration_data'))) {
+            $r->merge(['registration_data' => json_decode($r->input('registration_data'), true)]);
+        }
+        $details = $r->validate([
+            'registration_data' => 'sometimes|required|array:phone,province,city,district,address,postal_code,birth_date,gender,education,experience,category,rate_unit,arrangement,skills,occupation,referral,company_name,legal_number',
+            'registration_data.phone' => 'required_with:registration_data|string|regex:/^\+?[0-9]{9,15}$/',
+            'registration_data.province' => 'required_with:registration_data|string|max:100',
+            'registration_data.city' => 'required_with:registration_data|string|max:100',
+            'registration_data.district' => 'required_with:registration_data|string|max:100',
+            'registration_data.address' => 'required_with:registration_data|string|max:500',
+            'registration_data.postal_code' => 'nullable|string|max:10',
+            'registration_data.birth_date' => 'nullable|date|before:today',
+            'registration_data.gender' => 'nullable|in:Perempuan,Laki-laki',
+            'registration_data.education' => 'nullable|string|max:100',
+            'registration_data.experience' => 'nullable|boolean',
+            'registration_data.category' => 'nullable|in:art,babysitter',
+            'registration_data.rate_unit' => 'nullable|in:hourly,daily,monthly',
+            'registration_data.arrangement' => 'nullable|in:live_in,live_out',
+            'registration_data.skills' => 'nullable|array|max:20',
+            'registration_data.skills.*' => 'string|max:100',
+            'registration_data.occupation' => 'nullable|string|max:100',
+            'registration_data.referral' => 'nullable|string|max:100',
+            'registration_data.company_name' => 'nullable|string|max:120',
+            'registration_data.legal_number' => 'nullable|string|max:150',
+        ]);
         try {
-            $session = DB::transaction(function () use ($r, $v, $types, &$paths): array {
+            $session = DB::transaction(function () use ($r, $v, $types, $details, &$paths): array {
                 $u = User::create(collect($v)->only(['name', 'email', 'password'])->all());
                 $u->role = $v['role'];
+                $u->registration_data = $details['registration_data'] ?? null;
                 $u->save();
                 foreach (array_merge($types, $types === [] ? [] : ['supporting_document']) as $type) {
                     if (! $r->hasFile($type)) {

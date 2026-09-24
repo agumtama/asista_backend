@@ -10,6 +10,13 @@
 @else<p>Nomor legalitas: {{ $profile->legal_number }}</p><h3>Tarif & fee pekerja naungan</h3>@forelse($agencyWorkers as $worker)<h4>{{ $worker->name }}</h4>@include('admin.worker-pricing',['worker'=>$worker])@empty<p>Belum ada pekerja naungan.</p>@endforelse @endif
 @else<p>Pendaftar belum melengkapi profil.</p>@endif
 </section>
+@if($user->registration_data)
+<section class="panel"><h2>Data pendaftaran</h2><dl>
+@foreach(json_decode($user->registration_data, true) ?? [] as $key=>$value)
+<dt>{{ ['phone'=>'Nomor handphone','province'=>'Provinsi','city'=>'Kota / Kabupaten','district'=>'Kecamatan','address'=>'Alamat lengkap','postal_code'=>'Kode pos','birth_date'=>'Tanggal lahir','gender'=>'Jenis kelamin','education'=>'Pendidikan','experience'=>'Punya pengalaman kerja','category'=>'Layanan utama','rate_unit'=>'Satuan tarif','arrangement'=>'Pola kerja','skills'=>'Keahlian','occupation'=>'Pekerjaan','referral'=>'Sumber informasi','company_name'=>'Badan usaha','legal_number'=>'Nomor legalitas'][$key] ?? $key }}</dt>
+<dd>{{ is_array($value) ? implode(', ', $value) : (is_bool($value) ? ($value ? 'Ya' : 'Tidak') : ($value ?: '—')) }}</dd>
+@endforeach</dl></section>
+@endif
 <section class="panel"><h2>Dokumen privat</h2><p>Hanya admin yang dapat mengakses dokumen. Setiap akses berkas dicatat dalam audit trail.</p>
 @php($labels = ['ktp'=>'KTP','photo'=>'Foto diri','deed'=>'Akta badan usaha','nib'=>'NIB','npwp'=>'NPWP','business_license'=>'Legalitas badan usaha','supporting_document'=>'Dokumen pendukung'])
 @forelse($documents as $document)

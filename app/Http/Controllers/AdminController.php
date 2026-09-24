@@ -43,6 +43,66 @@ class AdminController extends Controller
         $query = DB::table($section === 'overview' ? 'bookings' : $section);
         $workerFilters = [];
         $filterAgencies = collect();
+        $filterCities = collect();
+        $agencyFilters = [];
+        $agencySummary = [];
+        $agencyCities = collect();
+        $agencySubscriptions = collect();
+        if ($section === 'agencies') {
+            $agencyFilters = $r->validate([
+                'q' => 'nullable|string|max:100', 'city' => 'nullable|string|max:100',
+                'verification' => ['nullable', Rule::in(['pending', 'verified', 'rejected'])],
+                'subscription' => 'nullable|string|max:100',
+                'registered_from' => 'nullable|date', 'registered_to' => 'nullable|date|after_or_equal:registered_from',
+                'tab' => ['nullable', Rule::in(['list', 'pending', 'subscription'])],
+                'export' => ['nullable', Rule::in(['csv'])],
+            ]);
+            $agencyCities = DB::table('agencies')->distinct()->orderBy('city')->pluck('city');
+            $agencySubscriptions = DB::table('agencies')->distinct()->orderBy('subscription')->pluck('subscription');
+            $agencySummary = ['total' => DB::table('agencies')->count(), 'new' => DB::table('agencies')->where('created_at', '>=', now()->startOfMonth())->count()];
+            foreach (['verified', 'pending', 'rejected'] as $status) {
+                $agencySummary[$status] = DB::table('agencies')->where('verification', $status)->count();
+            }
+            $agencySummary['active'] = DB::table('agencies')->where('subscription', 'active')->count();
+            $query->select('agencies.*')
+                ->selectSub(DB::table('workers')->selectRaw('COUNT(*)')->whereColumn('agency_id', 'agencies.id'), 'worker_count')
+                ->selectSub(DB::table('bookings')->selectRaw('COUNT(*)')->whereColumn('agency_id', 'agencies.id')->where('is_demo', false), 'booking_count');
+            if ($r->filled('q')) {
+                $query->where(function ($q) use ($agencyFilters) {
+                    $term = '%'.$agencyFilters['q'].'%';
+                    $q->where('name', 'like', $term)->orWhere('city', 'like', $term)->orWhere('legal_number', 'like', $term);
+                });
+            }
+            foreach (['city', 'verification', 'subscription'] as $field) {
+                if ($r->filled($field)) {
+                    $query->where($field, $agencyFilters[$field]);
+                }
+            }
+            if (($agencyFilters['tab'] ?? '') === 'pending') {
+                $query->where('verification', 'pending');
+            }
+            if (($agencyFilters['tab'] ?? '') === 'subscription') {
+                $query->where('subscription', 'active');
+            }
+            if ($r->filled('registered_from')) {
+                $query->whereDate('created_at', '>=', $agencyFilters['registered_from']);
+            }
+            if ($r->filled('registered_to')) {
+                $query->whereDate('created_at', '<=', $agencyFilters['registered_to']);
+            }
+            if (($agencyFilters['export'] ?? '') === 'csv') {
+                return response()->streamDownload(function () use ($query): void {
+                    $stream = fopen('php://output', 'w');
+                    fputcsv($stream, ['ID', 'Nama agency', 'Kota', 'Pekerja', 'Booking aktual', 'Subscription', 'Status'], ',', '"', '');
+                    foreach ($query->orderBy('id')->cursor() as $agency) {
+                        $cells = [$agency->id, $agency->name, $agency->city, $agency->worker_count, $agency->booking_count, $agency->subscription, $agency->verification];
+                        $cells = array_map(fn ($value) => preg_match('/^[\s]*[=+@\-]/u', (string) $value) ? "'".$value : $value, $cells);
+                        fputcsv($stream, $cells, ',', '"', '');
+                    }
+                    fclose($stream);
+                }, 'asista-agency.csv', ['Content-Type' => 'text/csv; charset=UTF-8', 'Cache-Control' => 'private, no-store']);
+            }
+        }
         if ($section === 'workers') {
             $workerFilters = $r->validate([
                 'q' => 'nullable|string|max:100',
@@ -51,12 +111,21 @@ class AdminController extends Controller
                 'category' => ['nullable', Rule::in(['art', 'babysitter'])],
                 'verification' => ['nullable', Rule::in(['pending', 'verified', 'rejected'])],
                 'available' => ['nullable', Rule::in(['0', '1'])],
+                'city' => 'nullable|string|max:100',
+                'rate_units' => 'nullable|array|max:3',
+                'rate_units.*' => ['string', Rule::in(['hourly', 'daily', 'monthly'])],
+                'arrangements' => 'nullable|array|max:2',
+                'arrangements.*' => ['string', Rule::in(['live_in', 'live_out'])],
+                'sort' => ['nullable', Rule::in(['newest', 'oldest', 'name'])],
             ]);
             $filterAgencies = DB::table('agencies')->orderBy('name')->get(['id', 'name']);
+            $filterCities = DB::table('workers')->distinct()->orderBy('city')->pluck('city');
             $query->leftJoin('agencies', 'agencies.id', '=', 'workers.agency_id')->select('workers.*', 'agencies.name as agency_name');
+            $query->selectSub(DB::table('verification_requests')->select('id')->whereColumn('user_id', 'workers.user_id')->where('document_type', 'photo')->latest('id')->limit(1), 'photo_id');
             if ($r->filled('q')) {
                 $query->where(function ($q) use ($workerFilters) {
-                    $q->where('workers.name', 'like', '%'.$workerFilters['q'].'%')->orWhere('workers.city', 'like', '%'.$workerFilters['q'].'%');
+                    $term = '%'.$workerFilters['q'].'%';
+                    $q->where('workers.name', 'like', $term)->orWhere('workers.city', 'like', $term)->orWhere('workers.category', 'like', $term)->orWhere('workers.skills', 'like', $term);
                 });
             }
             if (($workerFilters['affiliation'] ?? '') === 'independent') {
@@ -64,14 +133,27 @@ class AdminController extends Controller
             } elseif (($workerFilters['affiliation'] ?? '') === 'agency') {
                 $query->whereNotNull('workers.agency_id');
             }
-            foreach (['agency_id', 'category', 'verification', 'available'] as $field) {
+            foreach (['agency_id', 'category', 'verification', 'available', 'city'] as $field) {
                 if ($r->filled($field)) {
                     $query->where('workers.'.$field, $workerFilters[$field]);
                 }
             }
-            $query->orderByDesc('workers.id');
+            foreach (['rate_units' => 'rate_unit', 'arrangements' => 'arrangement'] as $filter => $column) {
+                if (! empty($workerFilters[$filter])) {
+                    $query->whereIn('workers.'.$column, $workerFilters[$filter]);
+                }
+            }
+            match ($workerFilters['sort'] ?? 'newest') {
+                'name' => $query->orderBy('workers.name')->orderBy('workers.id'),
+                'oldest' => $query->orderBy('workers.id'),
+                default => $query->orderByDesc('workers.id'),
+            };
         }
         if (in_array($section, ['overview', 'bookings'])) {
+            if ($section === 'bookings' && $r->filled('agency_id')) {
+                $r->validate(['agency_id' => 'integer|exists:agencies,id']);
+                $query->where('bookings.agency_id', $r->integer('agency_id'));
+            }
             $query->join('workers', 'workers.id', '=', 'bookings.worker_id')
                 ->join('users', 'users.id', '=', 'bookings.family_id')
                 ->leftJoin('agencies', 'agencies.id', '=', 'bookings.agency_id')
@@ -103,7 +185,11 @@ class AdminController extends Controller
             ? DB::table('payments')->whereIn('booking_id', $rows->pluck('id'))->orderByDesc('id')->get(['booking_id', 'order_id', 'status', 'payment_type', 'amount', 'created_at'])->groupBy('booking_id')
             : collect();
 
-        return view('admin.dashboard', compact('section', 'stats', 'rows', 'registrations', 'payments', 'agencyWorkers', 'revenue', 'workerFilters', 'filterAgencies'));
+        if ($section === 'agencies') {
+            return view('admin.agencies', compact('rows', 'registrations', 'agencyWorkers', 'agencyFilters', 'agencySummary', 'agencyCities', 'agencySubscriptions'));
+        }
+
+        return view('admin.dashboard', compact('section', 'stats', 'rows', 'registrations', 'payments', 'agencyWorkers', 'revenue', 'workerFilters', 'filterAgencies', 'filterCities'));
     }
 
     public function verify(Request $r, string $table, int $id)

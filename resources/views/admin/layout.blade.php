@@ -14,4 +14,6 @@
 <link rel="apple-touch-icon" sizes="180x180" href="/brand/icon-180.png">
 <link rel="stylesheet" href="/admin.css?v=asista1">
 <link rel="stylesheet" href="/brand.css?v=asista1">
+@if(request('section') === 'workers')<link rel="stylesheet" href="/workers.css?v=1">@endif
+@if(request('section') === 'agencies')<link rel="stylesheet" href="/agencies.css?v=1">@endif
 </head><body>@yield('content')</body></html>

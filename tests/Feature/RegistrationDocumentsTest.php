@@ -13,6 +13,17 @@ class RegistrationDocumentsTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_registration_details_are_validated_stored_and_hidden_from_session(): void
+    {
+        $details = ['phone' => '+6281234567890', 'province' => 'Jawa Barat', 'city' => 'Bandung', 'district' => 'Coblong', 'address' => 'Jalan contoh 10', 'occupation' => 'Karyawan'];
+        $this->postJson('/api/v1/register', $this->data('family') + ['registration_data' => $details])
+            ->assertCreated()->assertJsonMissingPath('user.registration_data');
+        $user = User::where('email', 'family@example.test')->firstOrFail();
+        $this->assertSame('Bandung', $user->registration_data['city']);
+        $this->postJson('/api/v1/register', array_replace($this->data('family'), ['email' => 'invalid@example.test', 'registration_data' => ['phone' => 'invalid']]))
+            ->assertUnprocessable()->assertJsonValidationErrors(['registration_data.phone', 'registration_data.address']);
+    }
+
     private function data(string $role): array
     {
         return ['name' => 'Pendaftar Baru', 'email' => $role.'@example.test', 'password' => 'Password123!', 'role' => $role];
