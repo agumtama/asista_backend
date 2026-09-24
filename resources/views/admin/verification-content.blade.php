@@ -9,7 +9,7 @@
 @php($labels = ['photo'=>'Foto diri','ktp'=>'KTP','deed'=>'Akta pendirian','nib'=>'NIB','npwp'=>'NPWP','business_license'=>'Legalitas badan usaha','supporting_document'=>'Dokumen pendukung'])
 @php($statuses = ['pending'=>'Menunggu verifikasi','verified'=>'Terverifikasi','rejected'=>'Ditolak'])
 @forelse($users as $user)
-<section class="verification-user"><header class="verification-heading"><div><strong>{{ $user->name }}</strong><small>{{ $user->email }} · #{{ $user->id }}</small></div><span class="worker-tag tag-service">{{ ['worker'=>'Pekerja','agency'=>'Agency','family'=>'Keluarga'][$user->role] ?? $user->role }}</span><a class="button secondary" href="{{ route('admin.registrant',$user->id) }}">Lihat profil &rarr;</a></header>
+<section class="verification-user"><header class="verification-heading"><div><strong>{{ $user->name }}</strong><small>{{ $user->email }} · #{{ $user->id }}</small></div><span class="worker-tag tag-service">{{ ['worker'=>'Pekerja','agency'=>'Agency','family'=>'Keluarga'][$user->role] ?? $user->role }}</span><x-admin-document-button href="{{ route('admin.registrant',$user->id) }}" /></header>
 <div class="verification-grid">@foreach($documents->get($user->id, collect()) as $document)
 @php($title = $labels[$document->document_type] ?? 'Dokumen verifikasi')
 <article class="verification-card">
