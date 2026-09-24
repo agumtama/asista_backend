@@ -15,6 +15,10 @@ class AdminWorkerFilterTest extends TestCase
     {
         $this->seed();
         $this->actingAs(User::where('role', 'admin')->first());
+        $this->get('/admin?section=workers')->assertOk()
+            ->assertSee('class="asista-pagination"', false)
+            ->assertSee('aria-current="page"', false)
+            ->assertDontSee("@include('admin.pagination'", false);
         $this->get('/admin?section=workers')->assertOk()->assertSee('Melalui agency')->assertSee('Tidak melalui agency')->assertSee('Mitra Keluarga');
         $this->get('/admin?section=workers&affiliation=independent')->assertOk()->assertViewHas('rows', fn ($rows) => $rows->total() === 2 && $rows->every(fn ($row) => $row->agency_id === null));
         $agency = DB::table('agencies')->value('id');

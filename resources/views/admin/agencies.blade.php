@@ -33,9 +33,11 @@
 <details><summary>Tarif & fee pekerja</summary>@forelse($agencyWorkers->get($agency->id,collect()) as $worker)<p>{{ $worker->name }} — fee Rp {{ number_format($worker->agency_fee,0,',','.') }} / booking</p>@include('admin.worker-pricing',['worker'=>$worker])@empty<p>Belum ada pekerja.</p>@endforelse</details>
 </div></details></td></tr>@empty<tr><td colspan="8"><div class="empty">Tidak ada agency yang sesuai filter.</div></td></tr>@endforelse
 </tbody></table></div>
+
 @include('admin.pagination',['page'=>$rows,'anchor'=>''])
 </section>
-@if($registrations->count())<details class="panel agency-registrations"><summary>Pendaftar belum melengkapi profil ({{ $registrations->total() }})</summary>@foreach($registrations as $registrant)<p><a href="{{ route('admin.registrant',$registrant->id) }}">{{ $registrant->name }} · {{ $registrant->email }}</a></p>@endforeach@include('admin.pagination',['page'=>$registrations,'anchor'=>''])</details>@endif
+@if($registrations->count())<details class="panel agency-registrations"><summary>Pendaftar belum melengkapi profil ({{ $registrations->total() }})</summary>@foreach($registrations as $registrant)<p><a href="{{ route('admin.registrant',$registrant->id) }}">{{ $registrant->name }} · {{ $registrant->email }}</a></p>@endforeach
+@include('admin.pagination',['page'=>$registrations,'anchor'=>''])</details>@endif
 <footer>Jumlah booking menunjukkan transaksi aktual, tidak termasuk demo. Subscription mengikuti status tersimpan; paket dan masa aktif berlangganan belum dikelola di aplikasi.</footer>
 </main>
 @endsection
