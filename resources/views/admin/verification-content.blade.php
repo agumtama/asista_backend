@@ -23,7 +23,7 @@
 <a class="document-download" href="{{ route('admin.document',['id'=>$document->id,'download'=>1]) }}">Unduh dokumen</a>
 </article>@endforeach</div></section>
 @empty<div class="empty">Tidak ada dokumen pengguna yang sesuai.</div>@endforelse
-<div class="pagination">@if($users->previousPageUrl())<a href="{{ $users->previousPageUrl() }}">Sebelumnya</a>@endif<span>Halaman {{ $users->currentPage() }} / {{ $users->lastPage() }}</span>@if($users->nextPageUrl())<a href="{{ $users->nextPageUrl() }}">Berikutnya</a>@endif</div>
+@include('admin.pagination',['page'=>$users,'anchor'=>''])
 </section><footer>Dokumen bersifat privat. Akses berkas dan keputusan verifikasi dicatat dalam audit trail.</footer>
 </main>
 <dialog id="document-modal" aria-labelledby="document-modal-title"><div class="document-modal-header"><h2 id="document-modal-title">Preview dokumen</h2><button type="button" id="document-modal-close" aria-label="Tutup preview">Tutup ×</button></div><img id="document-modal-image" alt=""><a id="document-modal-original" target="_blank" rel="noopener">Buka ukuran asli &nearr;</a></dialog>

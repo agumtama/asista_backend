@@ -33,9 +33,9 @@
 <details><summary>Tarif & fee pekerja</summary>@forelse($agencyWorkers->get($agency->id,collect()) as $worker)<p>{{ $worker->name }} — fee Rp {{ number_format($worker->agency_fee,0,',','.') }} / booking</p>@include('admin.worker-pricing',['worker'=>$worker])@empty<p>Belum ada pekerja.</p>@endforelse</details>
 </div></details></td></tr>@empty<tr><td colspan="8"><div class="empty">Tidak ada agency yang sesuai filter.</div></td></tr>@endforelse
 </tbody></table></div>
-<div class="agency-pagination"><span>Menampilkan {{ $rows->firstItem() ?? 0 }}–{{ $rows->lastItem() ?? 0 }} dari {{ $rows->total() }} data</span><div>@if($rows->previousPageUrl())<a href="{{ $rows->previousPageUrl() }}" aria-label="Halaman sebelumnya">‹</a>@endif<span class="current">{{ $rows->currentPage() }}</span><small>/ {{ $rows->lastPage() }}</small>@if($rows->nextPageUrl())<a href="{{ $rows->nextPageUrl() }}" aria-label="Halaman berikutnya">›</a>@endif</div></div>
+@include('admin.pagination',['page'=>$rows,'anchor'=>''])
 </section>
-@if($registrations->count())<details class="panel agency-registrations"><summary>Pendaftar belum melengkapi profil ({{ $registrations->total() }})</summary>@foreach($registrations as $registrant)<p><a href="{{ route('admin.registrant',$registrant->id) }}">{{ $registrant->name }} · {{ $registrant->email }}</a></p>@endforeach<div class="pagination">@if($registrations->previousPageUrl())<a href="{{ $registrations->previousPageUrl() }}">Sebelumnya</a>@endif @if($registrations->nextPageUrl())<a href="{{ $registrations->nextPageUrl() }}">Berikutnya</a>@endif</div></details>@endif
+@if($registrations->count())<details class="panel agency-registrations"><summary>Pendaftar belum melengkapi profil ({{ $registrations->total() }})</summary>@foreach($registrations as $registrant)<p><a href="{{ route('admin.registrant',$registrant->id) }}">{{ $registrant->name }} · {{ $registrant->email }}</a></p>@endforeach@include('admin.pagination',['page'=>$registrations,'anchor'=>''])</details>@endif
 <footer>Jumlah booking menunjukkan transaksi aktual, tidak termasuk demo. Subscription mengikuti status tersimpan; paket dan masa aktif berlangganan belum dikelola di aplikasi.</footer>
 </main>
 @endsection
