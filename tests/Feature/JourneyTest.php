@@ -21,14 +21,14 @@ class JourneyTest extends TestCase
     {
         parent::setUp();
         $this->seed();
-        $this->firstWorkerId = DB::table('workers')->where('user_id', User::where('email', 'worker1@rumahpercaya.test')->value('id'))->value('id');
-        $this->secondWorkerId = DB::table('workers')->where('user_id', User::where('email', 'worker2@rumahpercaya.test')->value('id'))->value('id');
-        $this->agencyId = DB::table('agencies')->where('user_id', User::where('email', 'agency@rumahpercaya.test')->value('id'))->value('id');
+        $this->firstWorkerId = DB::table('workers')->where('user_id', User::where('email', 'worker1@asista.test')->value('id'))->value('id');
+        $this->secondWorkerId = DB::table('workers')->where('user_id', User::where('email', 'worker2@asista.test')->value('id'))->value('id');
+        $this->agencyId = DB::table('agencies')->where('user_id', User::where('email', 'agency@asista.test')->value('id'))->value('id');
     }
 
     private function auth(string $name): array
     {
-        return ['Authorization' => 'Bearer '.$this->postJson('/api/v1/login', ['email' => $name.'@rumahpercaya.test', 'password' => 'DemoRumah123!'])->assertOk()->json('token')];
+        return ['Authorization' => 'Bearer '.$this->postJson('/api/v1/login', ['email' => $name.'@asista.test', 'password' => 'DemoAsista123!'])->assertOk()->json('token')];
     }
 
     public function test_shortlist_and_matching_belong_to_family(): void
@@ -51,7 +51,7 @@ class JourneyTest extends TestCase
     {
         $agency = $this->auth('agency');
         $worker = $this->auth('worker2');
-        $this->postJson('/api/v1/agency-invitations', ['email' => 'worker2@rumahpercaya.test', 'note' => 'Dukungan administrasi dan pencarian pekerjaan.'], $agency)->assertOk();
+        $this->postJson('/api/v1/agency-invitations', ['email' => 'worker2@asista.test', 'note' => 'Dukungan administrasi dan pencarian pekerjaan.'], $agency)->assertOk();
         $id = DB::table('agency_relationships')->value('id');
         $this->patchJson("/api/v1/agency-relationships/$id", ['status' => 'accepted'], $agency)->assertForbidden();
         $this->patchJson("/api/v1/agency-relationships/$id", ['status' => 'accepted'], $worker)->assertOk();

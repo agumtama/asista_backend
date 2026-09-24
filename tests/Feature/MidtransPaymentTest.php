@@ -37,9 +37,9 @@ class MidtransPaymentTest extends TestCase
 
             return Http::response($this->statusResponse);
         });
-        $token = $this->postJson('/api/v1/login', ['email' => 'family@rumahpercaya.test', 'password' => 'DemoRumah123!'])->json('token');
+        $token = $this->postJson('/api/v1/login', ['email' => 'family@asista.test', 'password' => 'DemoAsista123!'])->json('token');
         $this->headers = ['Authorization' => 'Bearer '.$token];
-        $worker = DB::table('workers')->where('user_id', User::where('email', 'worker1@rumahpercaya.test')->value('id'))->first();
+        $worker = DB::table('workers')->where('user_id', User::where('email', 'worker1@asista.test')->value('id'))->first();
         $this->bookingId = $this->postJson('/api/v1/bookings', [
             'worker_id' => $worker->id, 'starts_at' => now()->addDays(2)->toDateTimeString(), 'units' => 2,
             'address' => 'Jakarta', 'scope' => 'Menjaga anak dan membantu keluarga.',
@@ -83,7 +83,7 @@ class MidtransPaymentTest extends TestCase
     {
         $url = '/api/v1/bookings/'.$this->bookingId.'/payment';
         $this->postJson($url)->assertUnauthorized();
-        $token = $this->postJson('/api/v1/login', ['email' => 'worker1@rumahpercaya.test', 'password' => 'DemoRumah123!'])->assertOk()->json('token');
+        $token = $this->postJson('/api/v1/login', ['email' => 'worker1@asista.test', 'password' => 'DemoAsista123!'])->assertOk()->json('token');
         $this->postJson($url, [], ['Authorization' => 'Bearer '.$token])->assertForbidden();
         foreach ([['status' => 'requested', 'payment_status' => 'unpaid'], ['status' => 'accepted', 'payment_status' => 'paid']] as $state) {
             DB::table('bookings')->where('id', $this->bookingId)->update($state);
