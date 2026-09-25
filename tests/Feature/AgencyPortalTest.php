@@ -14,6 +14,20 @@ class AgencyPortalTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_rate_filters_combine_and_reset(): void
+    {
+        $this->seed();
+        $user = User::where('role', 'agency')->firstOrFail();
+        $agencyId = DB::table('agencies')->where('user_id', $user->id)->value('id');
+        foreach (['art', 'babysitter'] as $category) {
+            DB::table('agency_rates')->insert(['agency_id' => $agencyId, 'category' => $category, 'rate_unit' => 'daily', 'arrangement' => 'live_out', 'rate' => 200000, 'agency_fee' => 25000, 'created_at' => now(), 'updated_at' => now()]);
+        }
+        $this->actingAs($user)->get('/agency?tab=rates&rate_category=art&rate_unit=daily&rate_arrangement=live_out')->assertOk()->assertViewHas('rates', fn ($rates) => $rates->count() === 1 && $rates->first()->category === 'art');
+        $this->get('/agency?tab=rates&rate_unit=monthly')->assertOk()->assertViewHas('rates', fn ($rates) => $rates->isEmpty());
+        $this->get('/agency?tab=rates')->assertOk()->assertViewHas('rates', fn ($rates) => $rates->count() === 2);
+        $this->getJson('/agency?tab=rates&rate_unit=invalid')->assertUnprocessable();
+    }
+
     public function test_replacing_document_requires_latest_versions_to_be_verified(): void
     {
         $this->seed();

@@ -29,7 +29,14 @@ class AgencyPortalController extends Controller
         $tab = $filters['tab'] ?? 'profile';
         $details = $request->user()->registration_data ?? [];
         $documents = DB::table('verification_requests')->where('user_id', $request->user()->id)->latest('id')->get();
-        $rates = DB::table('agency_rates')->where('agency_id', $agency->id)->orderBy('category')->orderBy('rate_unit')->get();
+        $rateFilters = $request->validate(['rate_category' => 'nullable|in:art,babysitter', 'rate_unit' => 'nullable|in:hourly,daily,monthly', 'rate_arrangement' => 'nullable|in:live_in,live_out']);
+        $ratesQuery = DB::table('agency_rates')->where('agency_id', $agency->id);
+        foreach (['rate_category' => 'category', 'rate_unit' => 'rate_unit', 'rate_arrangement' => 'arrangement'] as $filter => $column) {
+            if (! empty($rateFilters[$filter])) {
+                $ratesQuery->where($column, $rateFilters[$filter]);
+            }
+        }
+        $rates = $ratesQuery->orderBy('category')->orderBy('rate_unit')->get();
         $workers = DB::table('workers')->where('agency_id', $agency->id);
         $cities = (clone $workers)->distinct()->orderBy('city')->pluck('city');
         foreach (['category', 'verification', 'city'] as $field) {
