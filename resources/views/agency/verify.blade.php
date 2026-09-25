@@ -2,7 +2,7 @@
 @section('content')
 <link rel="stylesheet" href="/agency-registration.css?v=1">
 <main class="agency-registration verification-email"><x-asista-logo /><section class="panel">
-@if($user->email_verified_at)<div class="registration-confirm"><span>✓</span><h1>Email terverifikasi</h1><p>Pendaftaran agency berhasil diterima. Dokumen legalitas Anda sedang menunggu pemeriksaan tim ASISTA.</p><p>Akun agency dapat digunakan pada aplikasi ASISTA. CMS owner hanya dapat diakses oleh tim platform.</p></div>
+@if($user->email_verified_at)<div class="registration-confirm"><span>✓</span><h1>Email terverifikasi</h1><p>Pendaftaran agency berhasil diterima. Dokumen legalitas Anda sedang menunggu pemeriksaan tim ASISTA.</p><p>Akun agency dapat digunakan pada aplikasi ASISTA dan CMS website. Masuk dengan email dan kata sandi pendaftaran Anda.</p></div>
 @else<h1>Verifikasi Email</h1><p>Masukkan kode yang dikirim ke <strong>{{ $user->email }}</strong>.</p>
 @if(session('success'))<p class="notice" role="status">{{ session('success') }}</p>@endif
 @foreach($errors->all() as $error)<p class="error" role="alert">{{ $error }}</p>@endforeach

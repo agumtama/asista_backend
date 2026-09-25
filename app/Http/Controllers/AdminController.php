@@ -15,12 +15,12 @@ class AdminController extends Controller
     public function login(Request $r)
     {
         $v = $r->validate(['email' => 'required|email', 'password' => 'required|string']);
-        if (! Auth::attempt($v + ['role' => 'admin'])) {
+        if (! Auth::attempt($v + ['role' => ['admin', 'agency']])) {
             return back()->withErrors(['email' => 'Kredensial admin tidak valid.']);
         }
         $r->session()->regenerate();
 
-        return redirect('/admin');
+        return redirect($r->user()->role === 'agency' ? '/agency' : '/admin');
     }
 
     public function logout(Request $r)

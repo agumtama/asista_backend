@@ -22,7 +22,7 @@ class Platform
     public static function worker($worker): array
     {
         $data = (array) $worker;
-        unset($data['user_id']);
+        unset($data['user_id'], $data['video_path']);
         $data['skills'] = json_decode($worker->skills, true);
         $data['certifications'] = json_decode($worker->certifications ?? '[]', true);
         $data['agency_name'] = $worker->agency_id ? DB::table('agencies')->where('id', $worker->agency_id)->value('name') : null;

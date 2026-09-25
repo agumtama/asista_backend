@@ -52,6 +52,8 @@ class AgencyWebRegistrationTest extends TestCase
         $this->assertNotNull($user->fresh()->email_verified_at);
         $this->assertSame('pending', $user->fresh()->verification);
         $this->get('/register/agency/verify')->assertOk()->assertSee('Email terverifikasi');
+        $this->post('/login', ['email' => 'agency@example.test', 'password' => 'SecurePassword123!'])->assertRedirect('/agency');
+        $this->get('/agency')->assertOk()->assertSee('PT Agency Uji');
         $this->actingAs($user)->get('/admin')->assertForbidden();
     }
 
