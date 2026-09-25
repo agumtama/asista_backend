@@ -141,7 +141,14 @@ class AgencyPortalController extends Controller
         $hasPhoto = DB::table('verification_requests')->where('user_id', $worker->user_id)->where('document_type', 'photo')->exists();
         $history = DB::table('bookings')->where('worker_id', $worker->id)->where('agency_id', $worker->agency_id)->where('is_demo', false)->where('status', 'completed')->latest('ends_at')->paginate(10)->withQueryString();
 
-        return view('agency.worker', compact('worker', 'history', 'hasPhoto'));
+        $workerUser = DB::table('users')->find($worker->user_id);
+        $registration = json_decode($workerUser->registration_data ?? '{}', true) ?? [];
+        $reviews = DB::table('reviews')->join('bookings', 'bookings.id', '=', 'reviews.booking_id')->where('reviews.target_id', $worker->user_id)->where('bookings.agency_id', $worker->agency_id)->where('bookings.is_demo', false);
+        $rating = (clone $reviews)->avg('reviews.rating');
+        $reviewCount = $reviews->count();
+        $documentStatuses = DB::table('verification_requests')->where('user_id', $worker->user_id)->latest('id')->get(['document_type', 'status'])->unique('document_type');
+
+        return view('agency.worker', compact('worker', 'history', 'hasPhoto', 'workerUser', 'registration', 'rating', 'reviewCount', 'documentStatuses'));
     }
 
     public function photo(Request $request, int $id): Response
