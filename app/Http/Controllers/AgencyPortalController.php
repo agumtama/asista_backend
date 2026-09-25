@@ -24,12 +24,19 @@ class AgencyPortalController extends Controller
     public function index(Request $request): View
     {
         $agency = $this->agency($request);
-        $filters = $request->validate(['tab' => 'nullable|in:profile,manager,documents,rates,workers', 'q' => 'nullable|string|max:100']);
+        $filters = $request->validate(['tab' => 'nullable|in:profile,manager,documents,rates,workers', 'q' => 'nullable|string|max:100', 'category' => 'nullable|in:art,babysitter', 'verification' => 'nullable|in:pending,verified,rejected', 'city' => 'nullable|string|max:100']);
         $tab = $filters['tab'] ?? 'profile';
         $details = $request->user()->registration_data ?? [];
         $documents = DB::table('verification_requests')->where('user_id', $request->user()->id)->latest('id')->get();
         $rates = DB::table('agency_rates')->where('agency_id', $agency->id)->orderBy('category')->orderBy('rate_unit')->get();
         $workers = DB::table('workers')->where('agency_id', $agency->id);
+        $cities = (clone $workers)->distinct()->orderBy('city')->pluck('city');
+        foreach (['category', 'verification', 'city'] as $field) {
+            if (! empty($filters[$field])) {
+                $workers->where($field, $filters[$field]);
+            }
+        }
+        $workers->select('workers.*')->selectSub(DB::table('verification_requests')->select('id')->whereColumn('user_id', 'workers.user_id')->where('document_type', 'photo')->latest('id')->limit(1), 'photo_id');
         if (! empty($filters['q'])) {
             $workers->where(function ($query) use ($filters): void {
                 $query->where('name', 'like', '%'.$filters['q'].'%')->orWhere('city', 'like', '%'.$filters['q'].'%');
@@ -37,7 +44,7 @@ class AgencyPortalController extends Controller
         }
         $workers = $workers->orderBy('name')->paginate(15)->withQueryString();
 
-        return view('agency.portal', compact('agency', 'tab', 'details', 'documents', 'rates', 'workers'));
+        return view('agency.portal', compact('agency', 'tab', 'details', 'documents', 'rates', 'workers', 'cities'));
     }
 
     public function profile(Request $request): RedirectResponse
