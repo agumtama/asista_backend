@@ -96,7 +96,8 @@ class AgencyPortalTest extends TestCase
         $this->assertDatabaseHas('agencies', ['user_id' => $user->id, 'name' => 'Updated Agency', 'verification' => 'pending']);
         $worker = DB::table('workers')->whereNotNull('agency_id')->first();
         $this->post('/agency/workers/'.$worker->id.'/video', ['video' => UploadedFile::fake()->create('bad.txt', 10, 'text/plain')])->assertSessionHasErrors('video');
-        $this->post('/agency/workers/'.$worker->id.'/video', ['video' => UploadedFile::fake()->create('intro.mp4', 10, 'video/mp4')])->assertRedirect();
+        $this->post('/agency/workers/'.$worker->id.'/video', ['video' => UploadedFile::fake()->create('too-large.mp4', 20481, 'video/mp4')])->assertSessionHasErrors('video');
+        $this->post('/agency/workers/'.$worker->id.'/video', ['video' => UploadedFile::fake()->create('intro.mp4', 10240, 'video/mp4')])->assertRedirect()->assertSessionHasNoErrors();
         $path = DB::table('workers')->where('id', $worker->id)->value('video_path');
         Storage::disk('local')->assertExists($path);
     }
