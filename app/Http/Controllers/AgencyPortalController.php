@@ -163,7 +163,11 @@ class AgencyPortalController extends Controller
     public function uploadVideo(Request $request, int $id): RedirectResponse
     {
         $worker = $this->ownedWorker($request, $id);
-        $request->validate(['video' => 'required|file|mimes:mp4,webm|max:20480']);
+        $request->validate(['video' => 'required|file|mimes:mp4,webm|max:20480'], [
+            'video.uploaded' => 'Video gagal diterima oleh server. Batas upload PHP aktif: '.ini_get('upload_max_filesize').' per file, '.ini_get('post_max_size').' per request. Periksa juga ruang penyimpanan dan folder sementara upload pada server.',
+            'video.max' => 'Ukuran video maksimal 20 MB.',
+            'video.mimes' => 'Gunakan video berformat MP4 atau WebM.',
+        ]);
         $path = $request->file('video')->store('worker-videos/'.$id, 'local');
         abort_unless($path, 500);
         try {
