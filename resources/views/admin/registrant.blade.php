@@ -4,6 +4,7 @@
 <a href="/admin?section={{ $table ?? 'users' }}">← Kembali ke daftar</a>
 <header><div><p class="eyebrow">ASISTA / DATA PENDAFTAR</p><h1>{{ $profile->name ?? $user->name }}</h1><p>{{ $user->email }} · {{ $user->role }} · {{ $user->verification }}</p></div></header>
 <section class="panel"><h2>Profil</h2>
+<p>Email: {{ $user->email_verified_at ? 'Terverifikasi' : 'Belum terverifikasi' }}</p>
 @if($profile)
 <p>Kota: {{ $profile->city }} · Verifikasi profil: {{ $profile->verification }}</p>
 @if($table === 'workers')<p>{{ $profile->bio }}</p><p>{{ $profile->category }} · Pengalaman {{ $profile->experience_years }} tahun</p>@include('admin.worker-pricing',['worker'=>$profile])
@@ -13,12 +14,12 @@
 @if($user->registration_data)
 <section class="panel"><h2>Data pendaftaran</h2><dl>
 @foreach(json_decode($user->registration_data, true) ?? [] as $key=>$value)
-<dt>{{ ['phone'=>'Nomor handphone','province'=>'Provinsi','city'=>'Kota / Kabupaten','district'=>'Kecamatan','address'=>'Alamat lengkap','postal_code'=>'Kode pos','birth_date'=>'Tanggal lahir','gender'=>'Jenis kelamin','education'=>'Pendidikan','experience'=>'Punya pengalaman kerja','category'=>'Layanan utama','rate_unit'=>'Satuan tarif','arrangement'=>'Pola kerja','skills'=>'Keahlian','occupation'=>'Pekerjaan','referral'=>'Sumber informasi','company_name'=>'Badan usaha','legal_number'=>'Nomor legalitas'][$key] ?? $key }}</dt>
+<dt>{{ ['phone'=>'Nomor handphone','province'=>'Provinsi','city'=>'Kota / Kabupaten','district'=>'Kecamatan','address'=>'Alamat lengkap','postal_code'=>'Kode pos','birth_date'=>'Tanggal lahir','gender'=>'Jenis kelamin','education'=>'Pendidikan','experience'=>'Punya pengalaman kerja','category'=>'Layanan utama','rate_unit'=>'Satuan tarif','arrangement'=>'Pola kerja','skills'=>'Keahlian','occupation'=>'Pekerjaan','referral'=>'Sumber informasi','company_name'=>'Badan usaha','legal_number'=>'Nomor legalitas','business_type'=>'Bentuk badan usaha','kbli'=>'Bidang usaha / KBLI','company_npwp'=>'NPWP badan usaha','company_phone'=>'Telepon perusahaan','company_email'=>'Email perusahaan','website'=>'Website','social_media'=>'Media sosial','position'=>'Jabatan pengelola','identity_number'=>'NIK / paspor pengelola','manager_npwp'=>'NPWP pengelola','manager_address'=>'Alamat pengelola','name'=>'Nama pengelola','email'=>'Email pengelola'][$key] ?? $key }}</dt>
 <dd>{{ is_array($value) ? implode(', ', $value) : (is_bool($value) ? ($value ? 'Ya' : 'Tidak') : ($value ?: '—')) }}</dd>
 @endforeach</dl></section>
 @endif
 <section class="panel"><h2>Dokumen privat</h2><p>Hanya admin yang dapat mengakses dokumen. Setiap akses berkas dicatat dalam audit trail.</p>
-@php($labels = ['ktp'=>'KTP','photo'=>'Foto diri','deed'=>'Akta badan usaha','nib'=>'NIB','npwp'=>'NPWP','business_license'=>'Legalitas badan usaha','supporting_document'=>'Dokumen pendukung'])
+@php($labels = ['ktp'=>'KTP','photo'=>'Foto diri','deed'=>'Akta badan usaha','nib'=>'NIB','npwp'=>'NPWP','business_license'=>'Legalitas badan usaha','supporting_document'=>'Dokumen pendukung','amendment'=>'Akta perubahan','domicile'=>'Bukti domisili usaha','bank_account'=>'Rekening perusahaan','manager_identity'=>'KTP / paspor pengelola'])
 @forelse($documents as $document)
 <article style="padding:20px 0;border-bottom:1px solid #ddd">
 <h3>{{ $labels[$document->document_type] ?? 'Dokumen verifikasi' }}</h3>

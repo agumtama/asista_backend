@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AgencyRegistrationController;
 use App\Http\Middleware\AdminOnly;
 use Illuminate\Support\Facades\Route;
 
@@ -8,6 +9,11 @@ Route::redirect('/', '/admin');
 Route::view('/payments/finish', 'payment-finish')->name('payment.finish');
 Route::view('/tentang-asista', 'about-asista')->name('brand.about');
 Route::view('/login', 'admin.login')->name('login');
+Route::get('/register/agency', [AgencyRegistrationController::class, 'create'])->name('agency.register');
+Route::post('/register/agency', [AgencyRegistrationController::class, 'store'])->middleware('throttle:5,10')->name('agency.register.store');
+Route::get('/register/agency/verify', [AgencyRegistrationController::class, 'verification'])->name('agency.verify');
+Route::post('/register/agency/verify', [AgencyRegistrationController::class, 'verify'])->middleware('throttle:5,1');
+Route::post('/register/agency/resend', [AgencyRegistrationController::class, 'sendCode'])->middleware('throttle:3,10')->name('agency.resend');
 Route::post('/login', [AdminController::class, 'login'])->middleware('throttle:5,1');
 Route::middleware(AdminOnly::class)->group(function () {
     Route::get('/admin', [AdminController::class, 'index']);

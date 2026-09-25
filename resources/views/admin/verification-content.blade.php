@@ -6,7 +6,7 @@
 <section class="panel records">
 <div class="section-title"><h2>Verifikasi identitas & dokumen</h2><span class="badge">{{ $users->total() }} pengguna</span></div>
 <form class="verification-search" method="get"><input type="hidden" name="section" value="verification_requests"><input name="q" value="{{ $filters['q'] ?? '' }}" placeholder="Cari nama atau email pengguna..." aria-label="Cari pengguna"><button>Cari</button><a class="button secondary" href="/admin?section=verification_requests">Reset</a></form>
-@php($labels = ['photo'=>'Foto diri','ktp'=>'KTP','deed'=>'Akta pendirian','nib'=>'NIB','npwp'=>'NPWP','business_license'=>'Legalitas badan usaha','supporting_document'=>'Dokumen pendukung'])
+@php($labels = ['photo'=>'Foto diri','ktp'=>'KTP','deed'=>'Akta pendirian','nib'=>'NIB','npwp'=>'NPWP','business_license'=>'Legalitas badan usaha','supporting_document'=>'Dokumen pendukung','amendment'=>'Akta perubahan','domicile'=>'Bukti domisili usaha','bank_account'=>'Rekening perusahaan','manager_identity'=>'KTP / paspor pengelola'])
 @php($statuses = ['pending'=>'Menunggu verifikasi','verified'=>'Terverifikasi','rejected'=>'Ditolak'])
 @forelse($users as $user)
 <section class="verification-user"><header class="verification-heading"><div><strong>{{ $user->name }}</strong><small>{{ $user->email }} · #{{ $user->id }}</small></div><span class="worker-tag tag-service">{{ ['worker'=>'Pekerja','agency'=>'Agency','family'=>'Keluarga'][$user->role] ?? $user->role }}</span><x-admin-document-button href="{{ route('admin.registrant',$user->id) }}" /></header>

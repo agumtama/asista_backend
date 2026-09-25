@@ -1,0 +1,2 @@
+@php($inputType = $type ?? 'text')
+<label>{{ $label }} {{ ($optional ?? false) ? '(opsional)' : '*' }}<input name="{{ $name }}" type="{{ $inputType }}" value="{{ $inputType === 'password' ? '' : old($name) }}" @required(!($optional ?? false)) maxlength="{{ $inputType === 'password' ? 128 : 250 }}" @if($inputType === 'password') minlength="10" autocomplete="new-password" @endif @if($inputType === 'tel') pattern="\+?[0-9]{9,15}" placeholder="Contoh: +6281234567890" @endif></label>
