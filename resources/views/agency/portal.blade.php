@@ -1,6 +1,6 @@
 @extends('admin.layout')
 @section('content')
-<link rel="stylesheet" href="/agency-portal.css?v=2">
+<link rel="stylesheet" href="/agency-portal.css?v=3">
 @if($tab === 'documents')<link rel="stylesheet" href="/verification.css?v=1">@endif
 <aside><x-asista-logo /><p class="eyebrow">AGENCY MANAGEMENT</p><nav><a class="active" href="{{ route('agency.portal') }}">▣ Agency</a></nav><form method="post" action="/logout">@csrf<button class="secondary">Keluar</button></form></aside>
 <main class="workspace agency-workspace"><header><div><p class="eyebrow">ASISTA / AGENCY</p><h1>Agency</h1><p>Kelola informasi agency, pengelola, dokumen, tarif, dan data pekerja Anda.</p></div><span class="badge">{{ auth()->user()->name }}</span></header>
@@ -25,8 +25,16 @@
 @endif
 </section><div class="agency-status-cards"><section class="panel"><h3>Status Agency</h3><span class="agency-state state-{{ $agency->verification }}">{{ $statuses[$agency->verification] ?? $agency->verification }}</span><p>{{ match($agency->verification) { 'verified'=>'Profil agency Anda sudah terverifikasi. Perubahan informasi atau dokumen akan ditinjau kembali oleh tim ASISTA.', 'rejected'=>'Pengajuan agency memerlukan perbaikan. Periksa catatan pada tab Dokumen & Legalitas dan lengkapi kembali data Anda.', default=>'Tim ASISTA sedang meninjau data dan dokumen agency Anda. Pantau status verifikasi melalui CMS ini.' } }}</p></section><section class="panel"><h3>Proses Verifikasi</h3><strong>Ditinjau oleh tim ASISTA</strong><p>Pastikan informasi dan dokumen legalitas lengkap agar pemeriksaan dapat diproses.</p><a href="{{ route('agency.portal',['tab'=>'documents']) }}">Lihat dokumen & legalitas →</a></section></div></div>
 @elseif($tab === 'manager')
-<section class="panel"><h2>Data Pengelola Agency</h2><p>Pengelola utama yang memiliki akses akun agency ini.</p><div class="table-wrap"><table><thead><tr><th>Nama</th><th>Jabatan</th><th>Email masuk</th><th>Telepon</th><th>Akses</th></tr></thead><tbody><tr><td>{{ auth()->user()->name }}</td><td>{{ $details['position'] ?? 'Belum diisi' }}</td><td>{{ auth()->user()->email }}</td><td>{{ $details['phone'] ?? 'Belum diisi' }}</td><td>Owner Agency</td></tr></tbody></table></div><form class="agency-fields" method="post" action="{{ route('agency.manager') }}">@csrf
-@foreach(['name'=>'Nama Pengelola','position'=>'Jabatan','phone'=>'Telepon','manager_address'=>'Alamat Domisili (opsional)'] as $key=>$label)<label>{{ $label }}<input name="{{ $key }}" value="{{ old($key,$key === 'name' ? auth()->user()->name : ($details[$key] ?? '')) }}" @required($key !== 'manager_address')></label>@endforeach<button>Simpan pengelola</button></form></section>
+<section class="panel agency-managers"><div class="agency-manager-heading"><span class="agency-manager-icon" aria-hidden="true">@include('admin.nav-icon',['name'=>'users'])</span><div><h2>Data Pengelola Agency</h2><p>Kelola data pengelola yang memiliki akses ke akun agency.</p></div></div>
+<div class="table-wrap"><table class="agency-manager-table"><thead><tr><th>No.</th><th>Nama</th><th>Jabatan</th><th>Email</th><th>Nomor Telepon</th><th>Akses</th><th>Status</th><th>Aksi</th></tr></thead><tbody><tr><td>1</td><td><strong>{{ auth()->user()->name }}</strong></td><td>{{ $details['position'] ?? 'Belum diisi' }}</td><td>{{ auth()->user()->email }}</td><td>{{ $details['phone'] ?? 'Belum diisi' }}</td><td>Owner</td><td><span class="agency-manager-status"><span aria-hidden="true">●</span> Aktif</span></td><td><a class="agency-manager-edit" href="{{ route('agency.portal',['tab'=>'manager','edit'=>1]) }}" aria-label="Edit pengelola {{ auth()->user()->name }}">✎ Edit</a></td></tr></tbody></table></div>
+<p class="agency-manager-note">Saat ini akun agency memiliki satu pengelola utama. Akses staf tambahan belum tersedia.</p>
+@if(request('edit') === '1' || $errors->any())
+<div class="agency-profile-editor"><h3>Edit Pengelola Agency</h3>
+<form class="agency-fields" method="post" action="{{ route('agency.manager') }}">@csrf
+@foreach(['name'=>'Nama Pengelola','position'=>'Jabatan','phone'=>'Telepon','manager_address'=>'Alamat Domisili (opsional)'] as $key=>$label)<label>{{ $label }}<input name="{{ $key }}" value="{{ old($key,$key === 'name' ? auth()->user()->name : ($details[$key] ?? '')) }}" @required($key !== 'manager_address')></label>@endforeach<button>Simpan pengelola</button></form>
+<a href="{{ route('agency.portal',['tab'=>'manager']) }}">Batal / tutup form</a></div>
+@endif
+</section>
 @elseif($tab === 'documents')
 <section class="panel"><h2>Dokumen & Legalitas</h2><p>Dokumen privat agency Anda. Klik gambar untuk memperbesar atau Lihat untuk membuka berkas. Setiap akses dicatat.</p><form class="agency-upload" method="post" enctype="multipart/form-data" action="{{ route('agency.documents.upload') }}">@csrf<label>Jenis dokumen<select name="document_type">@foreach(\App\Http\Controllers\AgencyRegistrationController::DOCUMENTS as $key=>$label)<option value="{{ $key }}">{{ $label }}</option>@endforeach</select></label><label>PDF / JPG / PNG, maks. 5 MB<input type="file" name="document" accept=".pdf,.jpg,.jpeg,.png" required></label><button>Unggah dokumen</button></form><div class="agency-document-grid">@forelse($documents as $document)<article class="agency-document">
 @if(in_array($document->mime_type,['image/jpeg','image/png']))
