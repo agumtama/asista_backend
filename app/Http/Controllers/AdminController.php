@@ -214,12 +214,20 @@ class AdminController extends Controller
         DB::transaction(function () use ($r, $table, $id, $v) {
             $row = DB::table($table)->find($id);
             abort_unless($row, 404);
+            if ($table === 'agencies' && $v['status'] === 'verified') {
+                abort_unless(Platform::agencyDocumentStatus($row->user_id) === 'verified', 422, 'Semua dokumen terbaru agency harus terverifikasi terlebih dahulu.');
+            }
             DB::table($table)->where('id', $id)->update([($table === 'verification_requests' ? 'status' : 'verification') => $v['status'], 'updated_at' => now()]);
             if ($table === 'verification_requests') {
                 DB::table($table)->where('id', $id)->update(['note' => $v['note']]);
                 $statuses = DB::table('verification_requests')->where('user_id', $row->user_id)->pluck('status');
                 $status = $statuses->contains('rejected') ? 'rejected' : ($statuses->every(fn ($status) => $status === 'verified') ? 'verified' : 'pending');
                 DB::table('users')->where('id', $row->user_id)->update(['verification' => $status, 'updated_at' => now()]);
+                if (DB::table('users')->where('id', $row->user_id)->value('role') === 'agency') {
+                    $status = Platform::agencyDocumentStatus($row->user_id);
+                    DB::table('agencies')->where('user_id', $row->user_id)->update(['verification' => $status, 'updated_at' => now()]);
+                    DB::table('users')->where('id', $row->user_id)->update(['verification' => $status, 'updated_at' => now()]);
+                }
             }
             Platform::audit($r->user()->id, 'verification.'.$v['status'], $table.':'.$id, ['note' => $v['note']]);
         });

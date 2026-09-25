@@ -14,6 +14,27 @@ class AgencyPortalTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_replacing_document_requires_latest_versions_to_be_verified(): void
+    {
+        $this->seed();
+        Storage::fake('local');
+        $agencyUser = User::where('role', 'agency')->firstOrFail();
+        foreach (['nib', 'deed', 'npwp', 'business_license'] as $type) {
+            DB::table('verification_requests')->insert(['user_id' => $agencyUser->id, 'document_type' => $type, 'document_path' => 'old-'.$type.'.pdf', 'status' => 'verified', 'created_at' => now(), 'updated_at' => now()]);
+        }
+        $this->actingAs($agencyUser)->post('/agency/documents', ['document_type' => 'nib', 'document' => UploadedFile::fake()->create('new.pdf', 10, 'application/pdf')])->assertRedirect();
+        $this->assertDatabaseHas('agencies', ['user_id' => $agencyUser->id, 'verification' => 'pending']);
+        $new = DB::table('verification_requests')->latest('id')->first();
+        $admin = User::where('role', 'admin')->firstOrFail();
+        $agencyId = DB::table('agencies')->where('user_id', $agencyUser->id)->value('id');
+        $this->actingAs($admin)->post('/admin/verify/agencies/'.$agencyId, ['status' => 'verified', 'note' => 'Percobaan bypass'])->assertUnprocessable();
+        $this->post('/admin/verify/verification_requests/'.$new->id, ['status' => 'verified', 'note' => 'Dokumen sudah diperiksa'])->assertRedirect();
+        $this->assertDatabaseHas('agencies', ['user_id' => $agencyUser->id, 'verification' => 'verified']);
+        $old = DB::table('verification_requests')->where('document_type', 'nib')->oldest('id')->first();
+        $this->post('/admin/verify/verification_requests/'.$old->id, ['status' => 'rejected', 'note' => 'Versi lama tidak berlaku'])->assertRedirect();
+        $this->assertDatabaseHas('agencies', ['user_id' => $agencyUser->id, 'verification' => 'verified']);
+    }
+
     public function test_agency_login_tabs_and_tenant_boundaries(): void
     {
         $this->seed();

@@ -6,6 +6,19 @@ use Illuminate\Support\Facades\DB;
 
 class Platform
 {
+    public static function agencyDocumentStatus(int $userId): string
+    {
+        $documents = DB::table('verification_requests')->where('user_id', $userId)->orderByDesc('id')->get()->unique('document_type');
+        $details = json_decode(DB::table('users')->where('id', $userId)->value('registration_data') ?? '{}', true);
+        $required = ['deed', 'nib', 'npwp', 'business_license'];
+        if (isset($details['identity_number'])) {
+            $required = array_merge($required, ['domicile', 'bank_account', 'manager_identity']);
+        }
+
+        return collect($required)->diff($documents->pluck('document_type'))->isEmpty()
+            && $documents->every(fn ($document) => $document->status === 'verified') ? 'verified' : 'pending';
+    }
+
     public static function audit(int $user, string $action, string $subject, array $metadata = []): void
     {
         DB::table('audit_logs')->insert(['user_id' => $user, 'action' => $action, 'subject' => $subject, 'metadata' => json_encode($metadata), 'created_at' => now(), 'updated_at' => now()]);
