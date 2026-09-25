@@ -26,6 +26,7 @@ Route::middleware(AgencyOnly::class)->group(function () {
     Route::get('/agency/documents/{id}', [AgencyPortalController::class, 'document'])->name('agency.document');
     Route::post('/agency/rates', [AgencyPortalController::class, 'rate'])->name('agency.rates');
     Route::post('/agency/rates/{id}/apply', [AgencyPortalController::class, 'applyRate'])->name('agency.rates.apply');
+    Route::get('/agency/rates/{id}/preview', [AgencyPortalController::class, 'previewRate'])->name('agency.rates.preview');
     Route::get('/agency/workers/{id}', [AgencyPortalController::class, 'worker'])->name('agency.worker');
     Route::get('/agency/workers/{id}/photo', [AgencyPortalController::class, 'photo'])->name('agency.worker.photo');
     Route::post('/agency/workers/{id}/video', [AgencyPortalController::class, 'uploadVideo'])->name('agency.video.upload');

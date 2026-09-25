@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\Platform;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -115,13 +116,29 @@ class AgencyPortalController extends Controller
         return back()->with('success', 'Tarif disimpan. Klik Terapkan untuk memperbarui pekerja yang sesuai.');
     }
 
+    public function previewRate(Request $request, int $id): JsonResponse
+    {
+        $agency = $this->agency($request);
+        abort_unless($agency->verification === 'verified', 403);
+        $rate = DB::table('agency_rates')->where('agency_id', $agency->id)->find($id);
+        abort_unless($rate, 404);
+        $workers = DB::table('workers')->where('agency_id', $agency->id)->where('category', $rate->category)->where('rate_unit', $rate->rate_unit)->where('arrangement', $rate->arrangement)->orderBy('name')->get(['id', 'name', 'rate', 'agency_fee']);
+
+        return response()->json(['rate' => $rate, 'workers' => $workers])->header('Cache-Control', 'private, no-store');
+    }
+
     public function applyRate(Request $request, int $id): RedirectResponse
     {
         $agency = $this->agency($request);
         abort_unless($agency->verification === 'verified', 403, 'Agency harus terverifikasi sebelum menerapkan tarif.');
         $rate = DB::table('agency_rates')->where('agency_id', $agency->id)->find($id);
         abort_unless($rate, 404);
-        $count = DB::table('workers')->where('agency_id', $agency->id)->where('category', $rate->category)->where('rate_unit', $rate->rate_unit)->where('arrangement', $rate->arrangement)->update(['rate' => $rate->rate, 'agency_fee' => $rate->agency_fee, 'updated_at' => now()]);
+        $request->validate(['worker_ids' => 'sometimes|required|array|min:1', 'worker_ids.*' => 'integer']);
+        $query = DB::table('workers')->where('agency_id', $agency->id)->where('category', $rate->category)->where('rate_unit', $rate->rate_unit)->where('arrangement', $rate->arrangement);
+        if ($request->has('worker_ids')) {
+            $query->whereIn('id', $request->input('worker_ids'));
+        }
+        $count = $query->update(['rate' => $rate->rate, 'agency_fee' => $rate->agency_fee, 'updated_at' => now()]);
         Platform::audit($request->user()->id, 'agency.rate_applied', 'agency:'.$agency->id, ['rate_id' => $id, 'workers' => $count]);
 
         return back()->with('success', 'Tarif diterapkan ke '.$count.' pekerja yang sesuai. Booking lama tetap menggunakan nominal sebelumnya.');
