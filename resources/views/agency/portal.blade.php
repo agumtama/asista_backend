@@ -1,6 +1,6 @@
 @extends('admin.layout')
 @section('content')
-<link rel="stylesheet" href="/agency-portal.css?v=1">
+<link rel="stylesheet" href="/agency-portal.css?v=2">
 @if($tab === 'documents')<link rel="stylesheet" href="/verification.css?v=1">@endif
 <aside><x-asista-logo /><p class="eyebrow">AGENCY MANAGEMENT</p><nav><a class="active" href="{{ route('agency.portal') }}">▣ Agency</a></nav><form method="post" action="/logout">@csrf<button class="secondary">Keluar</button></form></aside>
 <main class="workspace agency-workspace"><header><div><p class="eyebrow">ASISTA / AGENCY</p><h1>Agency</h1><p>Kelola informasi agency, pengelola, dokumen, tarif, dan data pekerja Anda.</p></div><span class="badge">{{ auth()->user()->name }}</span></header>
@@ -9,9 +9,21 @@
 <nav class="agency-tabs" aria-label="Pengaturan agency">@foreach(['profile'=>'Profil Agency','manager'=>'Pengelola Agency','documents'=>'Dokumen & Legalitas','rates'=>'Tarif & Fee','workers'=>'Data Pekerja'] as $key=>$label)<a class="{{ $key === $tab ? 'active' : '' }}" href="{{ route('agency.portal',['tab'=>$key]) }}" @if($key === $tab) aria-current="page" @endif>{{ $label }}</a>@endforeach</nav>
 @php($statuses = ['pending'=>'Menunggu verifikasi','verified'=>'Terverifikasi','rejected'=>'Ditolak'])
 @if($tab === 'profile')
-<div class="agency-profile-grid"><section class="panel"><h2>Informasi Agency</h2><h3>{{ $agency->name }}</h3><small>Terdaftar {{ \Carbon\Carbon::parse($agency->created_at)->format('d M Y') }}</small><form class="agency-fields" method="post" action="{{ route('agency.profile') }}">@csrf
+<div class="agency-profile-grid agency-profile-summary"><section class="panel agency-information">
+<div class="agency-information-heading"><span class="agency-building" aria-hidden="true">@include('admin.nav-icon',['name'=>'agencies'])</span><div><h2>Informasi Agency</h2><div class="agency-name-line"><h3>{{ $agency->name }}</h3><span class="agency-state state-{{ $agency->verification }}">{{ $statuses[$agency->verification] ?? $agency->verification }}</span></div><small>Terdaftar {{ \Carbon\Carbon::parse($agency->created_at)->translatedFormat('d M Y') }}</small></div><a class="agency-edit-link" href="{{ route('agency.portal',['tab'=>'profile','edit'=>1]) }}">✎ Edit</a></div>
+<dl class="agency-information-list">
+@foreach(['company_email'=>'Email','company_phone'=>'Nomor Telepon','website'=>'Website','social_media'=>'Media Sosial','city'=>'Kota / Kabupaten','address'=>'Alamat','legal_number'=>'Nomor Legalitas','description'=>'Deskripsi Agency'] as $key=>$label)
+<dt>{{ $label }}</dt><dd>{{ ($key === 'city' ? $agency->city : ($key === 'legal_number' ? $agency->legal_number : ($details[$key] ?? ''))) ?: 'Belum diisi' }}</dd>
+@endforeach
+</dl>
+@if(request('edit') === '1' || $errors->any())
+<div class="agency-profile-editor"><h3>Edit Profil Agency</h3>
+<form class="agency-fields" method="post" action="{{ route('agency.profile') }}">@csrf
 @foreach(['company_name'=>'Nama Agency','city'=>'Kota / Kabupaten','address'=>'Alamat Perusahaan','company_phone'=>'Telepon / WhatsApp','company_email'=>'Email Perusahaan','website'=>'Website (opsional)','social_media'=>'Media Sosial (opsional)'] as $key=>$label)<label>{{ $label }}<input name="{{ $key }}" value="{{ old($key,$details[$key] ?? ($key === 'company_name' ? $agency->name : ($key === 'city' ? $agency->city : ''))) }}" @required(!in_array($key,['website','social_media'])) type="{{ $key === 'company_email' ? 'email' : ($key === 'website' ? 'url' : 'text') }}"></label>@endforeach
-<label class="wide">Deskripsi Agency<textarea name="description" maxlength="2000">{{ old('description',$details['description'] ?? '') }}</textarea></label><button>Simpan profil</button></form></section><section class="panel"><h3>Status Agency</h3><span class="badge">{{ $statuses[$agency->verification] ?? $agency->verification }}</span><p>Perubahan profil atau unggahan legalitas akan diperiksa kembali oleh tim ASISTA.</p><small>Nomor legalitas: {{ $agency->legal_number }}</small></section></div>
+<label class="wide">Deskripsi Agency<textarea name="description" maxlength="2000">{{ old('description',$details['description'] ?? '') }}</textarea></label><button>Simpan profil</button></form>
+<a href="{{ route('agency.portal',['tab'=>'profile']) }}">Batal / tutup form</a></div>
+@endif
+</section><div class="agency-status-cards"><section class="panel"><h3>Status Agency</h3><span class="agency-state state-{{ $agency->verification }}">{{ $statuses[$agency->verification] ?? $agency->verification }}</span><p>{{ match($agency->verification) { 'verified'=>'Profil agency Anda sudah terverifikasi. Perubahan informasi atau dokumen akan ditinjau kembali oleh tim ASISTA.', 'rejected'=>'Pengajuan agency memerlukan perbaikan. Periksa catatan pada tab Dokumen & Legalitas dan lengkapi kembali data Anda.', default=>'Tim ASISTA sedang meninjau data dan dokumen agency Anda. Pantau status verifikasi melalui CMS ini.' } }}</p></section><section class="panel"><h3>Proses Verifikasi</h3><strong>Ditinjau oleh tim ASISTA</strong><p>Pastikan informasi dan dokumen legalitas lengkap agar pemeriksaan dapat diproses.</p><a href="{{ route('agency.portal',['tab'=>'documents']) }}">Lihat dokumen & legalitas →</a></section></div></div>
 @elseif($tab === 'manager')
 <section class="panel"><h2>Data Pengelola Agency</h2><p>Pengelola utama yang memiliki akses akun agency ini.</p><div class="table-wrap"><table><thead><tr><th>Nama</th><th>Jabatan</th><th>Email masuk</th><th>Telepon</th><th>Akses</th></tr></thead><tbody><tr><td>{{ auth()->user()->name }}</td><td>{{ $details['position'] ?? 'Belum diisi' }}</td><td>{{ auth()->user()->email }}</td><td>{{ $details['phone'] ?? 'Belum diisi' }}</td><td>Owner Agency</td></tr></tbody></table></div><form class="agency-fields" method="post" action="{{ route('agency.manager') }}">@csrf
 @foreach(['name'=>'Nama Pengelola','position'=>'Jabatan','phone'=>'Telepon','manager_address'=>'Alamat Domisili (opsional)'] as $key=>$label)<label>{{ $label }}<input name="{{ $key }}" value="{{ old($key,$key === 'name' ? auth()->user()->name : ($details[$key] ?? '')) }}" @required($key !== 'manager_address')></label>@endforeach<button>Simpan pengelola</button></form></section>
