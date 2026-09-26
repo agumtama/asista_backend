@@ -16,6 +16,7 @@
 <link rel="stylesheet" href="/brand.css?v=asista1">
 <link rel="stylesheet" href="/pagination.css?v=2">
 <link rel="stylesheet" href="/admin-document-button.css?v=1">
+<link rel="stylesheet" href="/sidebar.css?v=1">
 @if(request('section') === 'workers')<link rel="stylesheet" href="/workers.css?v=2">@endif
 @if(request('section') === 'agencies')<link rel="stylesheet" href="/agencies.css?v=1">@endif
 </head><body>@yield('content')</body></html>

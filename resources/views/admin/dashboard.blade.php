@@ -1,6 +1,6 @@
 @extends('admin.layout')
 @section('content')
-<aside><x-asista-logo /><p class="eyebrow">PLATFORM MANAGEMENT</p><nav>@foreach(['overview'=>'Ringkasan','workers'=>'Pekerja & portfolio','agencies'=>'Agency','users'=>'Pengguna','bookings'=>'Booking & pembayaran','verification_requests'=>'Verifikasi identitas','safety_reports'=>'Trust & safety','audit_logs'=>'Audit trail'] as $key=>$label)<a class="{{ $section === $key ? 'active' : '' }}" href="/admin?section={{ $key }}">@include('admin.nav-icon',['name'=>$key]){{ $label }}</a>@endforeach</nav><form method="post" action="/logout">@csrf<button class="secondary">Keluar</button></form></aside>
+@include('admin.sidebar')
 <main class="workspace {{ $section === 'workers' ? 'workers-workspace' : '' }}">@if($section !== 'workers')<header><div><p class="eyebrow">ASISTA / CMS</p><h1>{{ $section === 'overview' ? 'Selamat datang, tim ASISTA.' : ucwords(str_replace('_',' ',$section)) }}</h1><p>Kepercayaan dibangun dari proses yang bisa ditelusuri.</p></div><div class="avatar">{{ substr(auth()->user()->name,0,1) }}</div></header>@endif
 @if(session('success'))<div class="notice">{{ session('success') }}</div>@endif
 @foreach($errors->all() as $error)<p class="error">{{ $error }}</p>@endforeach

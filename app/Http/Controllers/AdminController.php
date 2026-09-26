@@ -204,6 +204,31 @@ class AdminController extends Controller
             return view('admin.agencies', compact('rows', 'registrations', 'agencyWorkers', 'agencyFilters', 'agencySummary', 'agencyCities', 'agencySubscriptions'));
         }
 
+        if ($section === 'overview') {
+            $days = (int) ($r->validate(['days' => 'nullable|in:7,30,90'])['days'] ?? 30);
+            $cards = [];
+            foreach (['users' => 'Total Pengguna', 'workers' => 'Total Pekerja', 'agencies' => 'Total Agency', 'bookings' => 'Booking Aktif'] as $table => $label) {
+                $base = DB::table($table);
+                if ($table === 'bookings') {
+                    $base->where('is_demo', false)->whereIn('status', ['requested', 'accepted', 'in_progress']);
+                }
+                $cards[] = ['label' => $label, 'section' => $table, 'total' => (clone $base)->count(), 'new' => (clone $base)->where('created_at', '>=', now()->startOfMonth())->count()];
+            }
+            $verification = DB::table('users')->selectRaw('verification, COUNT(*) as total')->groupBy('verification')->pluck('total', 'verification');
+            $start = now()->subDays($days - 1)->startOfDay();
+            $daily = DB::table('bookings')->where('is_demo', false)->whereBetween('created_at', [$start, now()])->selectRaw('DATE(created_at) as day, COUNT(*) as total')->groupByRaw('DATE(created_at)')->pluck('total', 'day');
+            $trend = collect(range(0, $days - 1))->map(fn ($offset) => ['date' => $start->copy()->addDays($offset)->format('d M'), 'total' => (int) ($daily[$start->copy()->addDays($offset)->toDateString()] ?? 0)]);
+            $activity = DB::table('audit_logs')->leftJoin('users', 'users.id', '=', 'audit_logs.user_id')->select('audit_logs.*', 'users.name as actor')->orderByDesc('audit_logs.id')->limit(7)->get();
+            $notifications = collect([
+                ['label' => 'Dokumen menunggu verifikasi', 'count' => DB::table('verification_requests')->where('status', 'pending')->count(), 'section' => 'verification_requests'],
+                ['label' => 'Agency belum terverifikasi', 'count' => DB::table('agencies')->where('verification', 'pending')->count(), 'section' => 'agencies'],
+                ['label' => 'Laporan keselamatan terbuka', 'count' => DB::table('safety_reports')->whereIn('status', ['reported', 'investigating', 'appealed'])->count(), 'section' => 'safety_reports'],
+                ['label' => 'Booking menunggu pembayaran', 'count' => DB::table('bookings')->where('is_demo', false)->where('status', 'accepted')->where('payment_status', 'unpaid')->count(), 'section' => 'bookings'],
+            ]);
+
+            return view('admin.overview', compact('section', 'cards', 'verification', 'trend', 'days', 'activity', 'notifications', 'revenue'));
+        }
+
         return view('admin.dashboard', compact('section', 'stats', 'rows', 'registrations', 'payments', 'agencyWorkers', 'revenue', 'workerFilters', 'filterAgencies', 'filterCities'));
     }
 

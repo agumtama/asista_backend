@@ -1,6 +1,6 @@
 @extends('admin.layout')
 @section('content')
-<aside><x-asista-logo/><p class="eyebrow">PLATFORM MANAGEMENT</p><nav>@foreach(['overview'=>'Ringkasan','workers'=>'Pekerja & portfolio','agencies'=>'Agency','users'=>'Pengguna','bookings'=>'Booking & pembayaran','verification_requests'=>'Verifikasi identitas','safety_reports'=>'Trust & safety','audit_logs'=>'Audit trail'] as $key=>$label)<a class="{{ $key === 'agencies' ? 'active' : '' }}" href="/admin?section={{ $key }}">@include('admin.nav-icon',['name'=>$key]){{ $label }}</a>@endforeach</nav><form method="post" action="/logout">@csrf<button class="secondary">Keluar</button></form></aside>
+@include('admin.sidebar')
 <main class="workspace agency-workspace">
 <header><div><p class="eyebrow">ASISTA / CMS / Agency</p><h1>Agency Management</h1><p>Kelola partner agency, verifikasi legalitas, subscription, pekerja, dan aktivitas booking.</p></div><div class="agency-admin"><span class="avatar">{{ mb_substr(auth()->user()->name,0,1) }}</span><div><strong>{{ auth()->user()->name }}</strong><br><small>Administrator</small></div></div></header>
 @if(session('success'))<div class="notice">{{ session('success') }}</div>@endif

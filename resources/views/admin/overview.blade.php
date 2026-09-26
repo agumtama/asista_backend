@@ -1,5 +1,5 @@
 @extends('admin.layout')
 @section('content')
 @include('admin.sidebar')
-@include('admin.verification-content')
+@include('admin.overview-content')
 @endsection

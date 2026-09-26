@@ -1,0 +1,1 @@
+aside nav a{display:flex;align-items:flex-start;gap:12px;line-height:1.5;white-space:normal}aside nav a>svg{width:19px;height:19px;flex:0 0 19px;margin:1px 0 0!important}aside nav a>span{display:block;min-width:0} @media(max-width:1000px){aside nav a{flex-shrink:0}aside nav a>span{white-space:nowrap}}
