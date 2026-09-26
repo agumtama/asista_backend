@@ -4,14 +4,20 @@
 <main class="workspace {{ $section === 'workers' ? 'workers-workspace' : '' }}">@if($section !== 'workers')<header><div><p class="eyebrow">ASISTA / CMS</p><h1>{{ $section === 'overview' ? 'Selamat datang, tim ASISTA.' : ucwords(str_replace('_',' ',$section)) }}</h1><p>Kepercayaan dibangun dari proses yang bisa ditelusuri.</p></div><div class="avatar">{{ substr(auth()->user()->name,0,1) }}</div></header>@endif
 @if(session('success'))<div class="notice">{{ session('success') }}</div>@endif
 @foreach($errors->all() as $error)<p class="error">{{ $error }}</p>@endforeach
+@if($section === 'bookings')<details class="booking-revenue"><summary>Ringkasan pendapatan & alokasi biaya</summary>
 @include('admin.revenue')
-@if(!in_array($section,['workers','users']))<div class="stats">@foreach(['workers'=>'Profil pekerja','agencies'=>'Partner agency','bookings'=>'Total booking','safety_reports'=>'Laporan privat'] as $key=>$label)<div class="panel"><span>{{ $label }}</span><strong>{{ $stats[$key] }}</strong><small>Data tersimpan di platform</small></div>@endforeach</div>@endif
+</details>@else
+@include('admin.revenue')
+@endif
+@if(!in_array($section,['workers','users','bookings']))<div class="stats">@foreach(['workers'=>'Profil pekerja','agencies'=>'Partner agency','bookings'=>'Total booking','safety_reports'=>'Laporan privat'] as $key=>$label)<div class="panel"><span>{{ $label }}</span><strong>{{ $stats[$key] }}</strong><small>Data tersimpan di platform</small></div>@endforeach</div>@endif
 @if($section === 'overview')<div class="banner"><div><p class="eyebrow">AMAN · SELEKTIF · INTEGRITAS · SETARA · TRANSPARAN · ANDAL</p><h2>Rasa tenang dimulai<br>dari proses yang baik.</h2><p>Tinjau identitas dan kelola hubungan kerja dengan adil.</p><a class="button" href="/admin?section=verification_requests">Tinjau verifikasi →</a></div><div class="seal">✓<small>TRUSTED<br>ECOSYSTEM</small></div></div>@endif
 @if($section !== 'workers' && $registrations->count())<section class="panel"><h2>Pendaftar belum melengkapi profil</h2>@foreach($registrations as $registrant)<p><strong>{{ $registrant->name }}</strong> · {{ $registrant->email }} · <x-admin-document-button href="{{ route('admin.registrant', $registrant->id) }}" /></p>@endforeach
 @include('admin.pagination',['page'=>$registrations,'anchor'=>''])</section>@endif
 <section class="panel records"><div class="section-title"><h2>{{ $section === 'overview' ? 'Booking terbaru' : ($section === 'workers' ? 'Daftar data Pekerja' : 'Daftar data') }}</h2><span class="badge">{{ $rows->total() }} data</span></div>
 @if($section === 'workers')@include('admin.worker-filters')@endif
 @if($section === 'workers')@include('admin.workers-table')
+@elseif($section === 'bookings')
+@include('admin.bookings-table')
 @elseif($section === 'users')
 @include('admin.users-table')
 @else
