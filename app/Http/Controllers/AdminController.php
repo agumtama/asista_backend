@@ -276,6 +276,13 @@ class AdminController extends Controller
         }
 
         $agencyWorkers = $table === 'agencies' && $profile ? DB::table('workers')->where('agency_id', $profile->id)->get() : collect();
+        if ($user->role === 'agency') {
+            $tab = request()->validate(['tab' => 'nullable|in:profile,manager,documents,rates,workers'])['tab'] ?? 'profile';
+            $details = json_decode($user->registration_data ?? '{}', true) ?? [];
+            $rates = DB::table('agency_rates')->where('agency_id', $profile?->id ?? 0)->orderBy('category')->orderBy('rate_unit')->get();
+
+            return view('admin.agency-detail', compact('user', 'profile', 'documents', 'agencyWorkers', 'tab', 'details', 'rates'));
+        }
 
         return view('admin.registrant', compact('user', 'profile', 'documents', 'table', 'agencyWorkers'));
     }
