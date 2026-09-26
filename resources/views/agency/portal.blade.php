@@ -2,7 +2,7 @@
 @section('content')
 <link rel="stylesheet" href="/agency-portal.css?v=3">
 @if($tab === 'documents')<link rel="stylesheet" href="/verification.css?v=1">@endif
-<aside><x-asista-logo /><p class="eyebrow">AGENCY MANAGEMENT</p><nav><a class="active" href="{{ route('agency.portal') }}">@include('admin.nav-icon',['name'=>'agencies'])<span>Agency</span></a></nav><form method="post" action="/logout">@csrf<button class="secondary">Log Out</button></form></aside>
+@include('agency.sidebar')
 <main class="workspace agency-workspace"><header><div><p class="eyebrow">ASISTA / AGENCY</p><h1>Agency</h1><p>Kelola informasi agency, pengelola, dokumen, tarif, dan data pekerja Anda.</p></div><span class="badge">{{ auth()->user()->name }}</span></header>
 @if(session('success'))<div class="notice" role="status">{{ session('success') }}</div>@endif
 @foreach($errors->all() as $error)<p class="error" role="alert">{{ $error }}</p>@endforeach

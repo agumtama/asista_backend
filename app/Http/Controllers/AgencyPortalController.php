@@ -22,6 +22,29 @@ class AgencyPortalController extends Controller
         return $agency;
     }
 
+    public function dashboard(Request $request): View
+    {
+        $agency = $this->agency($request);
+        $days = (int) ($request->validate(['days' => 'nullable|in:30,90,180'])['days'] ?? 90);
+        $workers = DB::table('workers')->where('agency_id', $agency->id);
+        $bookings = DB::table('bookings')->where('bookings.agency_id', $agency->id)->where('bookings.is_demo', false);
+        $counts = ['workers' => (clone $workers)->count(), 'active' => (clone $bookings)->whereIn('status', ['requested', 'accepted', 'in_progress'])->count(), 'completed' => (clone $bookings)->where('status', 'completed')->count()];
+        $workerStatuses = [
+            'Aktif' => (clone $workers)->where('verification', 'verified')->where('available', true)->count(),
+            'Tidak aktif' => (clone $workers)->where('verification', 'verified')->where('available', false)->count(),
+            'Dalam verifikasi' => (clone $workers)->where('verification', 'pending')->count(),
+            'Ditolak' => (clone $workers)->where('verification', 'rejected')->count(),
+        ];
+        $start = now()->subDays($days - 1)->startOfDay();
+        $daily = (clone $bookings)->whereBetween('created_at', [$start, now()])->selectRaw('DATE(created_at) as day, COUNT(*) as total')->groupByRaw('DATE(created_at)')->pluck('total', 'day');
+        $trend = collect(range(0, $days - 1))->map(fn ($offset) => ['date' => $start->copy()->addDays($offset)->format('d M'), 'total' => (int) ($daily[$start->copy()->addDays($offset)->toDateString()] ?? 0)]);
+        $recent = (clone $bookings)->leftJoin('users', 'users.id', '=', 'bookings.family_id')->leftJoin('workers', 'workers.id', '=', 'bookings.worker_id')->select('bookings.*', 'users.name as family_name', 'workers.name as worker_name')->orderByDesc('bookings.id')->paginate(5)->withQueryString();
+        $pendingDocuments = DB::table('verification_requests')->where('user_id', $request->user()->id)->latest('id')->get()->unique('document_type')->where('status', 'pending')->count();
+        $unpaid = (clone $bookings)->where('status', 'accepted')->where('payment_status', 'unpaid')->count();
+
+        return view('agency.dashboard', compact('agency', 'days', 'counts', 'workerStatuses', 'trend', 'recent', 'pendingDocuments', 'unpaid'));
+    }
+
     public function index(Request $request): View
     {
         $agency = $this->agency($request);

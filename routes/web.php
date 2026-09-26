@@ -19,6 +19,7 @@ Route::post('/register/agency/resend', [AgencyRegistrationController::class, 'se
 Route::post('/login', [AdminController::class, 'login'])->middleware('throttle:5,1');
 Route::post('/logout', [AdminController::class, 'logout'])->middleware('auth');
 Route::middleware(AgencyOnly::class)->group(function () {
+    Route::get('/agency/dashboard', [AgencyPortalController::class, 'dashboard'])->name('agency.dashboard');
     Route::get('/agency', [AgencyPortalController::class, 'index'])->name('agency.portal');
     Route::post('/agency/profile', [AgencyPortalController::class, 'profile'])->name('agency.profile');
     Route::post('/agency/manager', [AgencyPortalController::class, 'manager'])->name('agency.manager');

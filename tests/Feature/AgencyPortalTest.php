@@ -14,6 +14,22 @@ class AgencyPortalTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_dashboard_is_scoped_and_excludes_demo_bookings(): void
+    {
+        $this->seed();
+        $this->seed(DemoBookingSeeder::class);
+        $this->get('/agency/dashboard')->assertRedirect('/login');
+        $user = User::where('role', 'agency')->firstOrFail();
+        $this->actingAs($user)->get('/agency/dashboard')->assertOk()
+            ->assertViewHas('counts', fn ($counts) => $counts['workers'] === 2 && $counts['active'] === 0 && $counts['completed'] === 0)
+            ->assertViewHas('recent', fn ($recent) => $recent->total() === 0);
+        $other = User::factory()->create(['role' => 'agency']);
+        DB::table('agencies')->insert(['user_id' => $other->id, 'name' => 'Other Agency', 'city' => 'Bandung', 'legal_number' => 'OTHER', 'created_at' => now(), 'updated_at' => now()]);
+        $this->actingAs($other)->get('/agency/dashboard?days=30')->assertOk()
+            ->assertViewHas('counts', fn ($counts) => $counts['workers'] === 0)
+            ->assertViewHas('trend', fn ($trend) => $trend->count() === 30);
+    }
+
     public function test_rate_filters_combine_and_reset(): void
     {
         $this->seed();
