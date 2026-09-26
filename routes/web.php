@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AgencyPortalController;
 use App\Http\Controllers\AgencyRegistrationController;
+use App\Http\Controllers\PasswordResetController;
 use App\Http\Middleware\AdminOnly;
 use App\Http\Middleware\AgencyOnly;
 use Illuminate\Support\Facades\Route;
@@ -11,6 +12,9 @@ Route::redirect('/', '/admin');
 Route::view('/payments/finish', 'payment-finish')->name('payment.finish');
 Route::view('/tentang-asista', 'about-asista')->name('brand.about');
 Route::view('/login', 'admin.login')->name('login');
+Route::view('/reset-password/success', 'password-reset-success')->name('password.reset.success');
+Route::get('/reset-password/{token}', fn (string $token) => response()->view('password-reset', ['token' => $token])->header('Cache-Control', 'no-store')->header('Referrer-Policy', 'no-referrer'))->name('password.reset');
+Route::post('/reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:5,1')->name('password.update');
 Route::get('/register/agency', [AgencyRegistrationController::class, 'create'])->name('agency.register');
 Route::post('/register/agency', [AgencyRegistrationController::class, 'store'])->middleware('throttle:5,10')->name('agency.register.store');
 Route::get('/register/agency/verify', [AgencyRegistrationController::class, 'verification'])->name('agency.verify');

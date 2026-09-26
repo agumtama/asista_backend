@@ -1,0 +1,4 @@
+@extends('admin.layout')
+@section('content')
+<main class="login"><x-asista-logo /><h1>Atur ulang kata sandi</h1><p>Gunakan minimal 10 karakter untuk kata sandi baru.</p><form class="panel" method="post" action="{{ route('password.update') }}">@csrf<input type="hidden" name="token" value="{{ $token }}">@foreach($errors->all() as $error)<p class="error">{{ $error }}</p>@endforeach<label>Email<input type="email" name="email" value="{{ old('email',request('email')) }}" required autocomplete="email"></label><label>Kata sandi baru<input type="password" name="password" required minlength="10" maxlength="128" autocomplete="new-password"></label><label>Ulangi kata sandi<input type="password" name="password_confirmation" required minlength="10" maxlength="128" autocomplete="new-password"></label><button>Simpan kata sandi</button></form></main>
+@endsection

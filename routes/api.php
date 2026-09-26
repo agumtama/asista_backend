@@ -2,12 +2,14 @@
 
 use App\Http\Controllers\ApiController as Api;
 use App\Http\Controllers\JourneyController as Journey;
+use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Middleware\ApiToken;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->middleware('throttle:120,1')->group(function () {
+    Route::post('forgot-password', [PasswordResetController::class, 'send'])->middleware('throttle:3,10');
     Route::post('payments/midtrans/notification', [PaymentController::class, 'notification']);
     Route::post('register', [Api::class, 'register'])->middleware('throttle:5,1,register');
     Route::post('login', [Api::class, 'login'])->middleware('throttle:5,1,login');
