@@ -1,0 +1,7 @@
+<link rel="stylesheet" href="/admin-list-filters.css?v=1">
+<form class="admin-list-filters" method="get" action="/admin"><input type="hidden" name="section" value="{{ $section }}">
+@if($section === 'bookings' && request('agency_id'))<input type="hidden" name="agency_id" value="{{ request('agency_id') }}">@endif
+<input name="q" value="{{ request('q') }}" maxlength="100" aria-label="Pencarian" placeholder="{{ $section === 'users' ? 'Cari nama / email...' : 'Cari ID / pekerja / keluarga / agency...' }}">
+@php($options = $section === 'users' ? ['role'=>['Semua peran',['admin'=>'Admin','agency'=>'Agency','worker'=>'Pekerja','family'=>'Keluarga']], 'verification'=>['Semua verifikasi',['verified'=>'Terverifikasi','pending'=>'Menunggu','rejected'=>'Ditolak']]] : ['status'=>['Semua status booking',['requested'=>'Diminta','accepted'=>'Diterima','in_progress'=>'Berlangsung','completed'=>'Selesai','cancelled'=>'Dibatalkan']], 'payment_status'=>['Semua pembayaran',['unpaid'=>'Belum dibayar','paid'=>'Dibayar','refund'=>'Refund','disputed'=>'Sengketa']], 'data_type'=>['Semua data',['actual'=>'Aktual','demo'=>'Demo']]])
+@foreach($options as $field=>$option)<select name="{{ $field }}" aria-label="{{ $option[0] }}"><option value="">{{ $option[0] }}</option>@foreach($option[1] as $value=>$label)<option value="{{ $value }}" @selected(request($field) === $value)>{{ $label }}</option>@endforeach</select>@endforeach
+<button>Terapkan</button><a href="/admin?section={{ $section }}">Reset</a></form>

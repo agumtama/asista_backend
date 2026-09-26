@@ -177,6 +177,38 @@ class AdminController extends Controller
         } elseif ($section !== 'workers') {
             $query->latest();
         }
+        if ($section === 'users') {
+            $filters = $r->validate(['q' => 'nullable|string|max:100', 'role' => 'nullable|in:admin,agency,worker,family', 'verification' => 'nullable|in:verified,pending,rejected']);
+            foreach (['role', 'verification'] as $field) {
+                if (! empty($filters[$field])) {
+                    $query->where($field, $filters[$field]);
+                }
+            }
+            if (! empty($filters['q'])) {
+                $query->where(function ($q) use ($filters): void {
+                    $q->where('name', 'like', '%'.$filters['q'].'%')->orWhere('email', 'like', '%'.$filters['q'].'%');
+                });
+            }
+        }
+        if ($section === 'bookings') {
+            $filters = $r->validate(['q' => 'nullable|string|max:100', 'status' => 'nullable|in:requested,accepted,in_progress,completed,cancelled', 'payment_status' => 'nullable|in:unpaid,paid,refund,disputed', 'data_type' => 'nullable|in:actual,demo']);
+            foreach (['status', 'payment_status'] as $field) {
+                if (! empty($filters[$field])) {
+                    $query->where('bookings.'.$field, $filters[$field]);
+                }
+            }
+            if (! empty($filters['data_type'])) {
+                $query->where('bookings.is_demo', $filters['data_type'] === 'demo');
+            }
+            if (! empty($filters['q'])) {
+                $query->where(function ($q) use ($filters): void {
+                    $q->where('workers.name', 'like', '%'.$filters['q'].'%')->orWhere('users.name', 'like', '%'.$filters['q'].'%')->orWhere('agencies.name', 'like', '%'.$filters['q'].'%');
+                    if (ctype_digit(ltrim($filters['q'], '#'))) {
+                        $q->orWhere('bookings.id', (int) ltrim($filters['q'], '#'));
+                    }
+                });
+            }
+        }
         $rows = $query->paginate(20)->withQueryString();
         $agencyWorkers = $section === 'agencies' ? DB::table('workers')->whereIn('agency_id', $rows->pluck('id'))->get()->groupBy('agency_id') : collect();
         $revenue = [];
