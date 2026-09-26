@@ -1,8 +1,9 @@
 @extends('admin.layout')
 @section('content')
 <link rel="stylesheet" href="/agency-portal.css?v=3"><link rel="stylesheet" href="/agency-documents.css?v=2"><link rel="stylesheet" href="/agency-rates.css?v=2"><link rel="stylesheet" href="/verification.css?v=1">
-<main style="max-width:1400px;margin:auto;padding:24px">
-<a href="/admin?section=agencies">← Kembali ke daftar Agency</a><header><p class="eyebrow">ASISTA / CMS ADMIN / AGENCY</p><h1>{{ $profile->name ?? $details['company_name'] ?? $user->name }}</h1><p>Hanya lihat. Pengubahan data dilakukan oleh agency yang bersangkutan.</p></header>
+<link rel="stylesheet" href="/registrant-cv.css?v=1"><main class="registrant-page">
+<a class="registrant-back" href="/admin?section=agencies">← Kembali ke daftar Agency</a>
+@include('admin.registrant-hero')
 <nav class="agency-tabs" aria-label="Detail agency">@foreach(['profile'=>'Profil Agency','manager'=>'Pengelola Agency','documents'=>'Dokumen & Legalitas','rates'=>'Tarif & Fee','workers'=>'Data Pekerja'] as $key=>$label)<a class="{{ $tab === $key ? 'active' : '' }}" href="{{ route('admin.registrant',['id'=>$user->id,'tab'=>$key]) }}" @if($tab === $key) aria-current="page" @endif>{{ $label }}</a>@endforeach</nav>
 @php($statuses = ['verified'=>'Terverifikasi','pending'=>'Belum Terverifikasi','rejected'=>'Ditolak'])
 @if($tab === 'profile')

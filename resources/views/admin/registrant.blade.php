@@ -1,8 +1,9 @@
 @extends('admin.layout')
 @section('content')
-<main class="workspace" style="margin-left:0;max-width:1100px;margin-inline:auto">
-<a href="/admin?section={{ $table ?? 'users' }}">← Kembali ke daftar</a>
-<header><div><p class="eyebrow">ASISTA / DATA PENDAFTAR</p><h1>{{ $profile->name ?? $user->name }}</h1><p>{{ $user->email }} · {{ $user->role }} · {{ $user->verification }}</p></div></header>
+<link rel="stylesheet" href="/registrant-cv.css?v=1"><main class="registrant-page">
+<a class="registrant-back" href="/admin?section={{ $table ?? 'users' }}">← Kembali ke daftar</a>
+@include('admin.registrant-hero')
+<div class="registrant-body">
 <section class="panel"><h2>Profil</h2>
 <p>Email: {{ $user->email_verified_at ? 'Terverifikasi' : 'Belum terverifikasi' }}</p>
 @if($profile)
@@ -28,5 +29,5 @@
 <a href="{{ route('admin.document', ['id'=>$document->id, 'download'=>1]) }}">Unduh</a>
 </article>
 @empty<p>Belum ada dokumen yang diunggah. Akun lama perlu melengkapi dokumennya.</p>@endforelse
-</section></main>
+</section></div></main>
 @endsection
