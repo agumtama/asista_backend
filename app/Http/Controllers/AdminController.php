@@ -322,7 +322,14 @@ class AdminController extends Controller
             'worker' => 'workers', 'agency' => 'agencies', default => null
         };
         $profile = $table ? DB::table($table)->where('user_id', $id)->first() : null;
-        $documents = DB::table('verification_requests')->where('user_id', $id)->latest()->get();
+        $documents = DB::table('verification_requests')->where('user_id', $id)->latest()->get()
+            ->map(function (object $document): object {
+                if (empty($document->mime_type) && Storage::disk('local')->exists($document->document_path)) {
+                    $document->mime_type = Storage::disk('local')->mimeType($document->document_path);
+                }
+
+                return $document;
+            });
         if ($user->role === 'worker') {
             $registration = json_decode($user->registration_data ?? '{}', true) ?? [];
             $skills = $profile ? json_decode($profile->skills, true) ?? [] : ($registration['skills'] ?? []);

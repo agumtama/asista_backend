@@ -13,6 +13,29 @@ class RegistrationDocumentsTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_registrant_details_preview_legacy_images_and_pdfs_for_each_role(): void
+    {
+        Storage::fake('local');
+        $admin = User::factory()->create(['role' => 'admin']);
+        foreach (['worker', 'agency', 'family'] as $role) {
+            $user = User::factory()->create(['role' => $role]);
+            $imagePath = UploadedFile::fake()->image('identity.png')->store('verification', 'local');
+            $imageId = DB::table('verification_requests')->insertGetId(['user_id' => $user->id, 'document_type' => 'ktp', 'document_path' => $imagePath, 'created_at' => now(), 'updated_at' => now()]);
+            $pdfPath = 'verification/'.$user->id.'.pdf';
+            Storage::disk('local')->put($pdfPath, "%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%%EOF");
+            $pdfId = DB::table('verification_requests')->insertGetId(['user_id' => $user->id, 'document_type' => 'supporting_document', 'document_path' => $pdfPath, 'created_at' => now(), 'updated_at' => now()]);
+            $url = '/admin/registrants/'.$user->id.($role === 'agency' ? '?tab=documents' : '');
+            $this->actingAs($admin)->get($url)->assertOk()
+                ->assertSee('data-preview="'.route('admin.document', $imageId).'"', false)
+                ->assertSee('data-preview="'.route('admin.document', $pdfId).'"', false)
+                ->assertSee('data-kind="pdf"', false)
+                ->assertSee('id="document-modal"', false)
+                ->assertSee('id="document-modal-pdf"', false);
+            $this->get('/admin/document/'.$pdfId)->assertOk()->assertHeader('Content-Type', 'application/pdf');
+            $this->actingAs($user)->get($url)->assertForbidden();
+        }
+    }
+
     public function test_mobile_upload_metadata_and_legacy_images_are_previewed_in_admin(): void
     {
         Storage::fake('local');

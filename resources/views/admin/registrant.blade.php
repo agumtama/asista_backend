@@ -1,5 +1,6 @@
 @extends('admin.layout')
 @section('content')
+<link rel="stylesheet" href="/verification.css?v=1">
 <link rel="stylesheet" href="/registrant-cv.css?v=1"><main class="registrant-page">
 <a class="registrant-back" href="/admin?section={{ $table ?? 'users' }}">← Kembali ke daftar</a>
 @include('admin.registrant-hero')
@@ -24,10 +25,12 @@
 @forelse($documents as $document)
 <article style="padding:20px 0;border-bottom:1px solid #ddd">
 <h3>{{ $labels[$document->document_type] ?? 'Dokumen verifikasi' }}</h3>
+@include('admin.document-preview')
 <p>{{ $document->original_name ?? 'Dokumen lama' }} · {{ $document->status }} · {{ $document->created_at }}</p>
 <a class="button" target="_blank" rel="noopener" href="{{ route('admin.document', $document->id) }}">Lihat dokumen</a>
 <a href="{{ route('admin.document', ['id'=>$document->id, 'download'=>1]) }}">Unduh</a>
 </article>
 @empty<p>Belum ada dokumen yang diunggah. Akun lama perlu melengkapi dokumennya.</p>@endforelse
 </section></div></main>
+@include('admin.document-modal')
 @endsection

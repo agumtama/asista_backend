@@ -1,6 +1,7 @@
 @extends('admin.layout')
 @section('content')
 <link rel="stylesheet" href="/worker-cv.css?v=1">
+<link rel="stylesheet" href="/verification.css?v=1">
 @php($labels = ['verified'=>'Terverifikasi','pending'=>'Menunggu verifikasi','rejected'=>'Ditolak'])
 @php($name = $profile->name ?? $user->name)
 <main class="worker-cv">
@@ -31,7 +32,8 @@
 <details class="panel cv-section"><summary>Data pendaftaran privat</summary><dl>@foreach($registration as $key=>$value)<dt>{{ ['phone'=>'Nomor handphone','province'=>'Provinsi','city'=>'Kota','district'=>'Kecamatan','address'=>'Alamat','postal_code'=>'Kode pos','birth_date'=>'Tanggal lahir','education'=>'Pendidikan','gender'=>'Jenis kelamin','experience'=>'Punya pengalaman','skills'=>'Keahlian','category'=>'Layanan','rate_unit'=>'Satuan tarif','arrangement'=>'Pola kerja'][$key] ?? $key }}</dt><dd>{{ is_array($value) ? implode(', ',$value) : (is_bool($value) ? ($value ? 'Ya' : 'Tidak') : ($value ?: '—')) }}</dd>@endforeach @if(!$registration)<p>Belum ada data tambahan.</p>@endif</dl></details></div>
 <section class="panel cv-section cv-documents"><h2>▤ Dokumen privat</h2><p class="cv-muted">Hanya admin yang dapat mengakses dokumen. Setiap akses berkas dicatat dalam audit trail.</p>
 @php($docLabels = ['ktp'=>'KTP','photo'=>'Foto diri','family_card'=>'Kartu Keluarga','skck'=>'SKCK','health_certificate'=>'Surat Kesehatan','training_certificate'=>'Sertifikat Pelatihan','supporting_document'=>'Dokumen pendukung'])
-@forelse($documents as $document)<article class="cv-document"><strong>{{ $docLabels[$document->document_type] ?? 'Dokumen verifikasi' }}</strong><small class="cv-status status-{{ $document->status }}">{{ $labels[$document->status] ?? $document->status }}</small><small>{{ $document->original_name ?? 'Dokumen lama' }}</small><div class="cv-document-links"><a target="_blank" rel="noopener" href="{{ route('admin.document',$document->id) }}">Lihat dokumen ↗</a><a href="{{ route('admin.document',['id'=>$document->id,'download'=>1]) }}">Unduh</a></div>@if($document->note)<small>Catatan: {{ $document->note }}</small>@endif</article>@empty<p>Belum ada dokumen yang diunggah.</p>@endforelse
+@forelse($documents as $document)<article class="cv-document">@include('admin.document-preview')<strong>{{ $docLabels[$document->document_type] ?? 'Dokumen verifikasi' }}</strong><small class="cv-status status-{{ $document->status }}">{{ $labels[$document->status] ?? $document->status }}</small><small>{{ $document->original_name ?? 'Dokumen lama' }}</small><div class="cv-document-links"><a target="_blank" rel="noopener" href="{{ route('admin.document',$document->id) }}">Lihat dokumen ↗</a><a href="{{ route('admin.document',['id'=>$document->id,'download'=>1]) }}">Unduh</a></div>@if($document->note)<small>Catatan: {{ $document->note }}</small>@endif</article>@empty<p>Belum ada dokumen yang diunggah.</p>@endforelse
 @foreach(['ktp'=>'KTP','photo'=>'Foto diri'] as $type=>$label)@unless($documents->contains('document_type',$type))<div class="cv-document"><strong>{{ $label }}</strong><small>Belum diunggah</small></div>@endunless @endforeach
 </section></div><footer>CV ini disusun dari data profil dan aktivitas ASISTA. Informasi pribadi serta dokumen hanya tersedia bagi admin.</footer></main>
+@include('admin.document-modal')
 @endsection
