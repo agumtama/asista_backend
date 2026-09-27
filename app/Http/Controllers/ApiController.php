@@ -175,8 +175,15 @@ class ApiController extends Controller
     public function verification(Request $r)
     {
         $r->validate(['document' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120']);
-        $path = $r->file('document')->store('verification', 'local');
-        DB::table('verification_requests')->insert(['user_id' => $r->user()->id, 'document_path' => $path, 'created_at' => now(), 'updated_at' => now()]);
+        $file = $r->file('document');
+        $path = $file->store('verification', 'local');
+        DB::table('verification_requests')->insert([
+            'user_id' => $r->user()->id, 'document_path' => $path,
+            'document_type' => 'supporting_document',
+            'original_name' => mb_substr(basename($file->getClientOriginalName()), 0, 255),
+            'mime_type' => $file->getMimeType(), 'file_size' => $file->getSize(),
+            'status' => 'pending', 'created_at' => now(), 'updated_at' => now(),
+        ]);
 
         return response()->json(['message' => 'Dokumen privat diterima untuk ditinjau.'], 201);
     }

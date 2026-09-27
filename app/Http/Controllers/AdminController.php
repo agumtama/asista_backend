@@ -47,7 +47,14 @@ class AdminController extends Controller
                 });
             }
             $users = $users->orderByDesc('id')->paginate(15)->withQueryString();
-            $documents = DB::table('verification_requests')->whereIn('user_id', $users->pluck('id'))->orderByDesc('id')->get()->groupBy('user_id');
+            $documents = DB::table('verification_requests')->whereIn('user_id', $users->pluck('id'))->orderByDesc('id')->get()
+                ->map(function (object $document): object {
+                    if (empty($document->mime_type) && Storage::disk('local')->exists($document->document_path)) {
+                        $document->mime_type = Storage::disk('local')->mimeType($document->document_path);
+                    }
+
+                    return $document;
+                })->groupBy('user_id');
 
             return view('admin.verification', compact('section', 'users', 'documents', 'filters'));
         }

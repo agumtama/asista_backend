@@ -13,6 +13,31 @@ class RegistrationDocumentsTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_mobile_upload_metadata_and_legacy_images_are_previewed_in_admin(): void
+    {
+        Storage::fake('local');
+        $user = User::factory()->create(['role' => 'worker']);
+        DB::table('api_tokens')->insert(['user_id' => $user->id, 'hash' => hash('sha256', 'upload-token'), 'expires_at' => now()->addDay(), 'created_at' => now(), 'updated_at' => now()]);
+        $this->withToken('upload-token')->postJson('/api/v1/verification', [
+            'document' => UploadedFile::fake()->image('mobile-photo.jpg'),
+        ])->assertCreated();
+        $uploaded = DB::table('verification_requests')->where('user_id', $user->id)->first();
+        $this->assertSame('image/jpeg', $uploaded->mime_type);
+        $this->assertSame('mobile-photo.jpg', $uploaded->original_name);
+        $this->assertGreaterThan(0, $uploaded->file_size);
+
+        $legacyPath = UploadedFile::fake()->image('legacy.png')->store('verification', 'local');
+        $legacyId = DB::table('verification_requests')->insertGetId(['user_id' => $user->id, 'document_path' => $legacyPath, 'created_at' => now(), 'updated_at' => now()]);
+        $missingId = DB::table('verification_requests')->insertGetId(['user_id' => $user->id, 'document_path' => 'verification/missing.png', 'created_at' => now(), 'updated_at' => now()]);
+        $admin = User::factory()->create(['role' => 'admin']);
+        $this->actingAs($admin)->get('/admin?section=verification_requests')->assertOk()
+            ->assertSee('data-preview="'.route('admin.document', $uploaded->id).'"', false)
+            ->assertSee('data-preview="'.route('admin.document', $legacyId).'"', false)
+            ->assertDontSee('data-preview="'.route('admin.document', $missingId).'"', false);
+        $this->get('/admin/document/'.$legacyId)->assertOk()->assertHeader('Content-Type', 'image/png');
+        $this->actingAs($user)->get('/admin/document/'.$legacyId)->assertForbidden();
+    }
+
     public function test_registration_details_are_validated_stored_and_hidden_from_session(): void
     {
         $details = ['phone' => '+6281234567890', 'province' => 'Jawa Barat', 'city' => 'Bandung', 'district' => 'Coblong', 'address' => 'Jalan contoh 10', 'occupation' => 'Karyawan'];
